@@ -134,8 +134,9 @@
     </div>
 
     <div class="summary-grid" id="summary-grid"></div>
+    <div class="panel" id="balance-panel"></div>
 
-    <div class="panel" id="entry-panel">
+    <div class="panel" id="entry-panel" style="display:none;">
       <h3 id="form-title">Add transaction</h3>
       <input type="hidden" id="edit-id">
       <div class="form-grid">
@@ -173,7 +174,7 @@
 
 <script>
 /* ====== CONFIG ====== */
-const API_URL = 'https://script.google.com/macros/s/AKfycbzL5yOkSioUp5PTRgvwALP-1Bpn_xyRPjxGoewGh-7QsXdJq3Z51GV5JnyuMUFeXgZi/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbzH8Huc9poFGNm85-4n5uVI8S6Nbx7bu95tNSfDaTg/dev';
 
 /* ====== STATE ====== */
 let session = null;      // {username, password, role, tabName, fullName}
@@ -224,6 +225,9 @@ async function enterApp(){
   document.getElementById('app').classList.add('active');
   document.getElementById('who').textContent = session.fullName + ' · ' + session.role;
   viewingTab = session.tabName;
+  document.getElementById('entry-panel').style.display = (session.role === 'admin') ? 'block' : 'none';
+  document.getElementById('viewing-title').textContent = viewingTab;
+  document.getElementById('viewing-sub').textContent = session.role === 'admin' ? 'Add, edit, or review transactions for this tab.' : 'View-only — ask the admin to add or change transactions.';
   await buildSidebar();
   document.getElementById('f-date').valueAsDate = new Date();
   setRange('today');
@@ -259,7 +263,7 @@ function switchTab(tabName){
   viewingTab = tabName;
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
   event.target.classList.add('active');
-  const canEdit = (tabName !== 'ALL');
+  const canEdit = (tabName !== 'ALL') && session.role === 'admin';
   document.getElementById('entry-panel').style.display = canEdit ? 'block' : 'none';
   document.getElementById('viewing-title').textContent = tabName === 'ALL' ? 'All employees — combined view' : tabName;
   document.getElementById('viewing-sub').textContent = tabName === 'ALL' ? 'Read-only combined summary across every tab.' : 'Add, edit, or review transactions for this tab.';
@@ -300,7 +304,7 @@ async function loadData(){
   const to = document.getElementById('range-to').value;
 
   const sumR = await api('summary', { tabName: viewingTab, dateFrom: from, dateTo: to });
-  renderSummary(sumR.ok ? sumR : {totals:{}, avgMargin:0, recordCount:0});
+  renderSummary(sumR);
 
   if(viewingTab === 'ALL'){
     document.getElementById('table-wrap').innerHTML = '<div class="empty">Select an individual employee tab to see line-by-line transactions.</div>';
@@ -311,44 +315,81 @@ async function loadData(){
   renderTable();
 }
 
-function renderSummary(sumR){
+function renderSummary(r){
   const grid = document.getElementById('summary-grid');
-  grid.innerHTML = '';
-  const types = ['Sell Suly','Buy Buzan','Sell Buzan','Buy Suly'];
-  types.forEach(t=>{
-    const d = sumR.totals[t] || {kg:0,total:0,count:0};
-    const card = document.createElement('div');
-    card.className = 'summary-card';
-    card.innerHTML = '<div class="type">'+t+'</div>'+
-      '<div class="kg num">'+d.kg.toFixed(2)+' kg</div>'+
-      '<div class="amt num">$'+Math.round(d.total).toLocaleString()+' · '+d.count+' txns</div>';
-    grid.appendChild(card);
-  });
+  const bal = document.getElementById('balance-panel');
+  if(!r.ok){ grid.innerHTML = ''; bal.innerHTML = '<div class="empty">Could not load summary.</div>'; return; }
+
+  function card(label, kg, total){
+    return '<div class="summary-card"><div class="type">'+label+'</div>'+
+      '<div class="kg num">'+kg.toFixed(2)+' kg</div>'+
+      '<div class="amt num">$'+Math.round(total).toLocaleString()+'</div></div>';
+  }
+  grid.innerHTML =
+    card('Suly bought', r.suly.boughtKg, r.suly.boughtTotal) +
+    card('Suly sold', r.suly.soldKg, r.suly.soldTotal) +
+    card('Buzan bought', r.buzan.boughtKg, r.buzan.boughtTotal) +
+    card('Buzan sold', r.buzan.soldKg, r.buzan.soldTotal);
+
+  const incomeClass = r.income >= 0 ? 'margin-pos' : 'margin-neg';
+  bal.innerHTML =
+    '<h3>Balance &amp; income for this range</h3>'+
+    '<div class="computed-row">'+
+      '<div>Suly left to sell<span class="num">'+r.sulyBalanceKg.toFixed(2)+' kg</span></div>'+
+      '<div>Buzan left to sell<span class="num">'+r.buzanBalanceKg.toFixed(2)+' kg</span></div>'+
+      '<div>Total bought<span class="num">$'+Math.round(r.totalBuy).toLocaleString()+'</span></div>'+
+      '<div>Total sold<span class="num">$'+Math.round(r.totalSell).toLocaleString()+'</span></div>'+
+      '<div>Income<span class="num"><span class="margin-pill '+incomeClass+'">$'+Math.round(r.income).toLocaleString()+'</span></span></div>'+
+      '<div>Income per KG<span class="num">$'+r.incomePerKg.toFixed(2)+'</span></div>'+
+      '<div>Average margin<span class="num">$'+r.avgMargin.toFixed(2)+'</span></div>'+
+      '<div>Transactions<span class="num">'+r.recordCount+'</span></div>'+
+    '</div>';
 }
 
 function renderTable(){
   const wrap = document.getElementById('table-wrap');
   if(!currentRecords.length){ wrap.innerHTML = '<div class="empty">No transactions in this range.</div>'; return; }
-  let html = '<table><thead><tr><th>Date</th><th>Type</th><th>KG</th><th>Customer</th><th>Rate</th><th>Price/KG</th><th>Ounce</th><th>Market $</th><th>Margin</th><th>Total</th><th></th></tr></thead><tbody>';
-  currentRecords.slice().reverse().forEach(r=>{
-    const marginClass = Number(r.Margin) >= 0 ? 'margin-pos' : 'margin-neg';
-    html += '<tr>'+
-      '<td>'+fmtDate(r.Date)+'</td>'+
-      '<td>'+r.Type+'</td>'+
-      '<td class="num">'+Number(r.KG).toFixed(2)+'</td>'+
-      '<td>'+(r.Customer||'')+'</td>'+
-      '<td class="num">'+Number(r.Rate).toFixed(3)+'</td>'+
-      '<td class="num">$'+Number(r.NegotiatedPrice).toFixed(2)+'</td>'+
-      '<td class="num">'+Number(r.Ounce).toFixed(3)+'</td>'+
-      '<td class="num">$'+Number(r.MarketPrice).toFixed(2)+'</td>'+
-      '<td class="num"><span class="margin-pill '+marginClass+'">$'+Number(r.Margin).toFixed(2)+'</span></td>'+
-      '<td class="num">$'+Math.round(r.Total).toLocaleString()+'</td>'+
-      '<td class="row-actions">'+
-        '<button class="secondary" onclick="editRecord(\''+r.ID+'\')">Edit</button>'+
-        '<button class="danger" onclick="removeRecord(\''+r.ID+'\')">Delete</button>'+
-      '</td></tr>';
+
+  const canEdit = session.role === 'admin';
+  const byDate = {};
+  currentRecords.forEach(r=>{
+    const d = fmtDate(r.Date);
+    if(!byDate[d]) byDate[d] = [];
+    byDate[d].push(r);
   });
-  html += '</tbody></table>';
+  const dates = Object.keys(byDate).sort().reverse();
+
+  let html = '';
+  dates.forEach(date=>{
+    const recs = byDate[date];
+    let dayKg = 0, dayTotal = 0;
+    recs.forEach(r=>{ dayKg += Number(r.KG)||0; dayTotal += Number(r.Total)||0; });
+
+    html += '<h3 style="margin:20px 0 8px;font-size:15px;">'+date+
+      '<span style="color:var(--muted);font-weight:400;font-size:13px;"> · '+dayKg.toFixed(2)+' kg · $'+Math.round(dayTotal).toLocaleString()+'</span></h3>';
+    html += '<table><thead><tr><th>Type</th><th>KG</th><th>Customer</th><th>Rate</th><th>Price/KG</th><th>Ounce</th><th>Market $</th><th>Margin</th><th>Total</th>'+(canEdit?'<th></th>':'')+'</tr></thead><tbody>';
+    recs.forEach(r=>{
+      const marginClass = Number(r.Margin) >= 0 ? 'margin-pos' : 'margin-neg';
+      html += '<tr>'+
+        '<td>'+r.Type+'</td>'+
+        '<td class="num">'+Number(r.KG).toFixed(2)+'</td>'+
+        '<td>'+(r.Customer||'')+'</td>'+
+        '<td class="num">'+Number(r.Rate).toFixed(3)+'</td>'+
+        '<td class="num">$'+Number(r.NegotiatedPrice).toFixed(2)+'</td>'+
+        '<td class="num">'+Number(r.Ounce).toFixed(3)+'</td>'+
+        '<td class="num">$'+Number(r.MarketPrice).toFixed(2)+'</td>'+
+        '<td class="num"><span class="margin-pill '+marginClass+'">$'+Number(r.Margin).toFixed(2)+'</span></td>'+
+        '<td class="num">$'+Math.round(r.Total).toLocaleString()+'</td>';
+      if(canEdit){
+        html += '<td class="row-actions">'+
+          '<button class="secondary" onclick="editRecord(\''+r.ID+'\')">Edit</button>'+
+          '<button class="danger" onclick="removeRecord(\''+r.ID+'\')">Delete</button>'+
+        '</td>';
+      }
+      html += '</tr>';
+    });
+    html += '</tbody></table>';
+  });
   wrap.innerHTML = html;
 }
 function fmtDate(d){ return String(d).slice(0,10); }
