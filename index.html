@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Suly / Buzan Ledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#15130E;
+    --surface:#1E1B14;
+    --surface-2:#26221A;
+    --line:#3A3529;
+    --gold:#C89B4A;
+    --gold-soft:#8A6D3A;
+    --silver:#9AA3AE;
+    --cream:#ECE6D8;
+    --muted:#9A8F78;
+    --green-bg:#1E3324; --green-fg:#7FD99A;
+    --red-bg:#3A1F1F; --red-fg:#E38A8A;
+    --radius:3px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--ink);color:var(--cream);font-family:'Inter',sans-serif;}
+  h1,h2,h3{font-family:'Fraunces',serif;font-weight:600;margin:0;}
+  .num{font-family:'IBM Plex Mono',monospace;}
+  a{color:inherit;}
+
+  /* ---- Login ---- */
+  #login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
+  .login-card{width:100%;max-width:360px;}
+  .login-card h1{font-size:28px;color:var(--gold);margin-bottom:4px;}
+  .login-card p{color:var(--muted);margin:0 0 28px;font-size:14px;}
+  label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px;letter-spacing:.02em;}
+  input,select,textarea{
+    width:100%;background:var(--surface-2);border:1px solid var(--line);color:var(--cream);
+    padding:10px 12px;border-radius:var(--radius);font-size:14px;font-family:inherit;margin-bottom:16px;
+  }
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold-soft);}
+  button{
+    background:var(--gold);color:#1A160E;border:none;padding:11px 18px;border-radius:var(--radius);
+    font-size:14px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;
+  }
+  button:hover{background:#D8AC5C;}
+  button.secondary{background:transparent;color:var(--cream);border:1px solid var(--line);}
+  button.secondary:hover{background:var(--surface-2);}
+  button.danger{background:transparent;color:var(--red-fg);border:1px solid var(--red-fg);padding:6px 10px;font-size:12px;}
+  .error{color:var(--red-fg);font-size:13px;margin:-8px 0 16px;}
+
+  /* ---- App shell ---- */
+  #app{display:none;min-height:100vh;}
+  #app.active{display:flex;}
+  .sidebar{width:220px;background:var(--surface);border-right:1px solid var(--line);padding:24px 16px;flex-shrink:0;}
+  .sidebar .brand{font-size:18px;color:var(--gold);margin-bottom:28px;}
+  .sidebar .who{font-size:12px;color:var(--muted);margin-bottom:24px;}
+  .tab-btn{display:block;width:100%;text-align:left;background:none;border:none;color:var(--cream);
+    padding:9px 10px;border-radius:var(--radius);font-size:14px;margin-bottom:2px;cursor:pointer;}
+  .tab-btn:hover{background:var(--surface-2);}
+  .tab-btn.active{background:var(--gold);color:#1A160E;font-weight:600;}
+  .sidebar .signout{margin-top:24px;font-size:12px;color:var(--muted);cursor:pointer;text-decoration:underline;}
+
+  .main{flex:1;padding:32px 40px;max-width:1100px;}
+  .main h2{font-size:22px;margin-bottom:4px;}
+  .subhead{color:var(--muted);font-size:13px;margin-bottom:24px;}
+
+  .range-row{display:flex;gap:8px;align-items:end;margin-bottom:20px;flex-wrap:wrap;}
+  .range-row button.chip{background:var(--surface-2);color:var(--cream);border:1px solid var(--line);
+    padding:7px 12px;font-size:13px;font-weight:500;}
+  .range-row button.chip.active{background:var(--gold);color:#1A160E;border-color:var(--gold);}
+  .range-row input[type=date]{margin-bottom:0;width:auto;}
+
+  .summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:32px;}
+  .summary-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px;}
+  .summary-card .type{font-size:12px;color:var(--muted);margin-bottom:8px;}
+  .summary-card .kg{font-size:20px;font-weight:600;}
+  .summary-card .amt{font-size:13px;color:var(--silver);margin-top:2px;}
+
+  .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:24px;margin-bottom:24px;}
+  .panel h3{font-size:15px;margin-bottom:16px;}
+  .form-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:0 16px;}
+  .form-grid .full{grid-column:1/-1;}
+  .computed-row{display:flex;gap:24px;padding:12px 0;margin:4px 0 16px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);flex-wrap:wrap;}
+  .computed-row div{font-size:13px;color:var(--muted);}
+  .computed-row span{display:block;color:var(--cream);font-size:15px;margin-top:2px;}
+  .margin-pill{display:inline-block;padding:2px 8px;border-radius:var(--radius);font-size:14px;}
+  .margin-pos{background:var(--green-bg);color:var(--green-fg);}
+  .margin-neg{background:var(--red-bg);color:var(--red-fg);}
+
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th{text-align:left;color:var(--muted);font-weight:500;padding:8px;border-bottom:1px solid var(--line);white-space:nowrap;}
+  td{padding:8px;border-bottom:1px solid var(--line);white-space:nowrap;}
+  tr:hover td{background:var(--surface-2);}
+  .row-actions button{margin-right:6px;}
+  .empty{color:var(--muted);font-size:13px;padding:20px 0;text-align:center;}
+</style>
+</head>
+<body>
+
+<!-- ============ LOGIN ============ -->
+<div id="login-screen">
+  <div class="login-card">
+    <h1>Suly / Buzan Ledger</h1>
+    <p>Sign in to record and review transactions.</p>
+    <div id="login-error" class="error" style="display:none;"></div>
+    <label for="lu">Username</label>
+    <input id="lu" type="text" autocomplete="username">
+    <label for="lp">Password</label>
+    <input id="lp" type="password" autocomplete="current-password">
+    <button onclick="doLogin()" style="width:100%;">Sign in</button>
+  </div>
+</div>
+
+<!-- ============ APP ============ -->
+<div id="app">
+  <div class="sidebar">
+    <div class="brand">Suly / Buzan</div>
+    <div class="who" id="who"></div>
+    <div id="tab-list"></div>
+    <div class="signout" onclick="signOut()">Sign out</div>
+  </div>
+
+  <div class="main">
+    <h2 id="viewing-title">Log</h2>
+    <div class="subhead" id="viewing-sub"></div>
+
+    <div class="range-row">
+      <button class="chip" data-range="today" onclick="setRange('today')">Today</button>
+      <button class="chip" data-range="week" onclick="setRange('week')">This week</button>
+      <button class="chip" data-range="month" onclick="setRange('month')">This month</button>
+      <button class="chip" data-range="all" onclick="setRange('all')">All time</button>
+      <div><label style="margin-bottom:4px;">From</label><input type="date" id="range-from" onchange="setRange('custom')"></div>
+      <div><label style="margin-bottom:4px;">To</label><input type="date" id="range-to" onchange="setRange('custom')"></div>
+    </div>
+
+    <div class="summary-grid" id="summary-grid"></div>
+
+    <div class="panel" id="entry-panel">
+      <h3 id="form-title">Add transaction</h3>
+      <input type="hidden" id="edit-id">
+      <div class="form-grid">
+        <div><label>Date</label><input type="date" id="f-date"></div>
+        <div><label>Type</label>
+          <select id="f-type">
+            <option>Sell Suly</option>
+            <option>Buy Buzan</option>
+            <option>Sell Buzan</option>
+            <option>Buy Suly</option>
+          </select>
+        </div>
+        <div><label>KG</label><input type="number" step="any" id="f-kg" oninput="updateComputed()"></div>
+        <div><label>Customer / phone</label><input type="text" id="f-customer"></div>
+        <div><label>Rate (per troy oz)</label><input type="number" step="any" id="f-rate" oninput="updateComputed()"></div>
+        <div><label>Negotiated price (per KG)</label><input type="number" step="any" id="f-price" oninput="updateComputed()"></div>
+        <div class="full"><label>Notes</label><input type="text" id="f-notes"></div>
+      </div>
+      <div class="computed-row">
+        <div>Ounce<span class="num" id="c-ounce">0.00</span></div>
+        <div>Market price / KG<span class="num" id="c-market">$0.00</span></div>
+        <div>Margin<span class="num" id="c-margin"><span class="margin-pill">$0.00</span></span></div>
+        <div>Total<span class="num" id="c-total">$0.00</span></div>
+      </div>
+      <button onclick="submitRecord()">Save transaction</button>
+      <button class="secondary" id="cancel-edit" style="display:none;margin-left:8px;" onclick="resetForm()">Cancel edit</button>
+    </div>
+
+    <div class="panel">
+      <h3>Transactions</h3>
+      <div id="table-wrap"><div class="empty">Loading…</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ====== CONFIG ====== */
+const API_URL = 'PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE';
+
+/* ====== STATE ====== */
+let session = null;      // {username, password, role, tabName, fullName}
+let viewingTab = null;   // which tab is currently displayed
+let employees = [];
+let currentRange = 'today';
+let currentRecords = [];
+
+/* ====== API ====== */
+async function api(action, payload) {
+  const res = await fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // avoids CORS preflight on Apps Script
+    body: JSON.stringify(Object.assign({ action, username: session ? session.username : payload.username,
+      password: session ? session.password : payload.password }, payload))
+  });
+  return res.json();
+}
+
+/* ====== LOGIN ====== */
+async function doLogin(){
+  const username = document.getElementById('lu').value.trim();
+  const password = document.getElementById('lp').value;
+  const errEl = document.getElementById('login-error');
+  errEl.style.display = 'none';
+  if(!username || !password){ errEl.textContent = 'Enter username and password.'; errEl.style.display='block'; return; }
+  try{
+    const r = await api('login', { username, password });
+    if(!r.ok){ errEl.textContent = r.error || 'Invalid login.'; errEl.style.display='block'; return; }
+    session = { username, password, role: r.role, tabName: r.tabName, fullName: r.fullName };
+    localStorage.setItem('sbl_session', JSON.stringify(session));
+    enterApp();
+  }catch(e){
+    errEl.textContent = 'Could not reach the server. Check the connection.';
+    errEl.style.display = 'block';
+  }
+}
+
+function signOut(){
+  session = null;
+  localStorage.removeItem('sbl_session');
+  document.getElementById('app').classList.remove('active');
+  document.getElementById('login-screen').style.display = 'flex';
+}
+
+async function enterApp(){
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').classList.add('active');
+  document.getElementById('who').textContent = session.fullName + ' · ' + session.role;
+  viewingTab = session.tabName;
+  await buildSidebar();
+  document.getElementById('f-date').valueAsDate = new Date();
+  setRange('today');
+}
+
+async function buildSidebar(){
+  const list = document.getElementById('tab-list');
+  list.innerHTML = '';
+  if(session.role === 'admin'){
+    const r = await api('listEmployees', {});
+    employees = r.ok ? r.employees : [];
+    const allBtn = document.createElement('button');
+    allBtn.className = 'tab-btn' + (viewingTab==='ALL' ? ' active' : '');
+    allBtn.textContent = 'All employees';
+    allBtn.onclick = () => switchTab('ALL');
+    list.appendChild(allBtn);
+    employees.forEach(emp => {
+      const b = document.createElement('button');
+      b.className = 'tab-btn' + (viewingTab===emp.tabName ? ' active' : '');
+      b.textContent = emp.fullName + ' (' + emp.tabName + ')';
+      b.onclick = () => switchTab(emp.tabName);
+      list.appendChild(b);
+    });
+  } else {
+    const b = document.createElement('button');
+    b.className = 'tab-btn active';
+    b.textContent = session.fullName;
+    list.appendChild(b);
+  }
+}
+
+function switchTab(tabName){
+  viewingTab = tabName;
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  event.target.classList.add('active');
+  const canEdit = (tabName !== 'ALL');
+  document.getElementById('entry-panel').style.display = canEdit ? 'block' : 'none';
+  document.getElementById('viewing-title').textContent = tabName === 'ALL' ? 'All employees — combined view' : tabName;
+  document.getElementById('viewing-sub').textContent = tabName === 'ALL' ? 'Read-only combined summary across every tab.' : 'Add, edit, or review transactions for this tab.';
+  loadData();
+}
+
+/* ====== DATE RANGE ====== */
+function setRange(mode){
+  currentRange = mode;
+  document.querySelectorAll('.range-row .chip').forEach(b=>b.classList.remove('active'));
+  const now = new Date();
+  let from = null, to = null;
+  if(mode === 'today'){
+    from = to = ymd(now);
+  } else if(mode === 'week'){
+    const day = now.getDay();
+    const monday = new Date(now); monday.setDate(now.getDate() - ((day+6)%7));
+    from = ymd(monday); to = ymd(now);
+  } else if(mode === 'month'){
+    from = ymd(new Date(now.getFullYear(), now.getMonth(), 1));
+    to = ymd(now);
+  } else if(mode === 'all'){
+    from = ''; to = '';
+  }
+  if(mode !== 'custom'){
+    document.getElementById('range-from').value = from || '';
+    document.getElementById('range-to').value = to || '';
+    const btn = document.querySelector('.chip[data-range="'+mode+'"]');
+    if(btn) btn.classList.add('active');
+  }
+  loadData();
+}
+function ymd(d){ return d.toISOString().slice(0,10); }
+
+/* ====== DATA LOAD ====== */
+async function loadData(){
+  const from = document.getElementById('range-from').value;
+  const to = document.getElementById('range-to').value;
+
+  const sumR = await api('summary', { tabName: viewingTab, dateFrom: from, dateTo: to });
+  renderSummary(sumR.ok ? sumR : {totals:{}, avgMargin:0, recordCount:0});
+
+  if(viewingTab === 'ALL'){
+    document.getElementById('table-wrap').innerHTML = '<div class="empty">Select an individual employee tab to see line-by-line transactions.</div>';
+    return;
+  }
+  const listR = await api('listRecords', { tabName: viewingTab, dateFrom: from, dateTo: to });
+  currentRecords = listR.ok ? listR.records : [];
+  renderTable();
+}
+
+function renderSummary(sumR){
+  const grid = document.getElementById('summary-grid');
+  grid.innerHTML = '';
+  const types = ['Sell Suly','Buy Buzan','Sell Buzan','Buy Suly'];
+  types.forEach(t=>{
+    const d = sumR.totals[t] || {kg:0,total:0,count:0};
+    const card = document.createElement('div');
+    card.className = 'summary-card';
+    card.innerHTML = '<div class="type">'+t+'</div>'+
+      '<div class="kg num">'+d.kg.toFixed(2)+' kg</div>'+
+      '<div class="amt num">$'+Math.round(d.total).toLocaleString()+' · '+d.count+' txns</div>';
+    grid.appendChild(card);
+  });
+}
+
+function renderTable(){
+  const wrap = document.getElementById('table-wrap');
+  if(!currentRecords.length){ wrap.innerHTML = '<div class="empty">No transactions in this range.</div>'; return; }
+  let html = '<table><thead><tr><th>Date</th><th>Type</th><th>KG</th><th>Customer</th><th>Rate</th><th>Price/KG</th><th>Ounce</th><th>Market $</th><th>Margin</th><th>Total</th><th></th></tr></thead><tbody>';
+  currentRecords.slice().reverse().forEach(r=>{
+    const marginClass = Number(r.Margin) >= 0 ? 'margin-pos' : 'margin-neg';
+    html += '<tr>'+
+      '<td>'+fmtDate(r.Date)+'</td>'+
+      '<td>'+r.Type+'</td>'+
+      '<td class="num">'+Number(r.KG).toFixed(2)+'</td>'+
+      '<td>'+(r.Customer||'')+'</td>'+
+      '<td class="num">'+Number(r.Rate).toFixed(3)+'</td>'+
+      '<td class="num">$'+Number(r.NegotiatedPrice).toFixed(2)+'</td>'+
+      '<td class="num">'+Number(r.Ounce).toFixed(3)+'</td>'+
+      '<td class="num">$'+Number(r.MarketPrice).toFixed(2)+'</td>'+
+      '<td class="num"><span class="margin-pill '+marginClass+'">$'+Number(r.Margin).toFixed(2)+'</span></td>'+
+      '<td class="num">$'+Math.round(r.Total).toLocaleString()+'</td>'+
+      '<td class="row-actions">'+
+        '<button class="secondary" onclick="editRecord(\''+r.ID+'\')">Edit</button>'+
+        '<button class="danger" onclick="removeRecord(\''+r.ID+'\')">Delete</button>'+
+      '</td></tr>';
+  });
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+}
+function fmtDate(d){ return String(d).slice(0,10); }
+
+/* ====== FORM / COMPUTED FIELDS ====== */
+function updateComputed(){
+  const kg = parseFloat(document.getElementById('f-kg').value) || 0;
+  const rate = parseFloat(document.getElementById('f-rate').value) || 0;
+  const price = parseFloat(document.getElementById('f-price').value) || 0;
+  const ounce = kg / 155.52;
+  const market = (rate / 31.103479) * 1000;
+  const margin = price - market;
+  const total = price * kg;
+  document.getElementById('c-ounce').textContent = ounce.toFixed(3);
+  document.getElementById('c-market').textContent = '$' + market.toFixed(2);
+  document.getElementById('c-total').textContent = '$' + Math.round(total).toLocaleString();
+  const pill = document.querySelector('#c-margin .margin-pill');
+  pill.textContent = '$' + margin.toFixed(2);
+  pill.className = 'margin-pill ' + (margin >= 0 ? 'margin-pos' : 'margin-neg');
+}
+
+async function submitRecord(){
+  const id = document.getElementById('edit-id').value;
+  const payload = {
+    tabName: viewingTab,
+    date: document.getElementById('f-date').value,
+    type: document.getElementById('f-type').value,
+    kg: document.getElementById('f-kg').value,
+    customer: document.getElementById('f-customer').value,
+    rate: document.getElementById('f-rate').value,
+    negotiatedPrice: document.getElementById('f-price').value,
+    notes: document.getElementById('f-notes').value
+  };
+  if(!payload.date || !payload.kg || !payload.rate || !payload.negotiatedPrice){
+    alert('Fill in date, KG, rate, and price.'); return;
+  }
+  const r = id ? await api('updateRecord', Object.assign({id}, payload)) : await api('addRecord', payload);
+  if(!r.ok){ alert(r.error || 'Could not save.'); return; }
+  resetForm();
+  loadData();
+}
+
+function editRecord(id){
+  const r = currentRecords.find(x => x.ID === id);
+  if(!r) return;
+  document.getElementById('edit-id').value = r.ID;
+  document.getElementById('f-date').value = fmtDate(r.Date);
+  document.getElementById('f-type').value = r.Type;
+  document.getElementById('f-kg').value = r.KG;
+  document.getElementById('f-customer').value = r.Customer;
+  document.getElementById('f-rate').value = r.Rate;
+  document.getElementById('f-price').value = r.NegotiatedPrice;
+  document.getElementById('f-notes').value = r.Notes;
+  document.getElementById('form-title').textContent = 'Edit transaction';
+  document.getElementById('cancel-edit').style.display = 'inline-block';
+  updateComputed();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+async function removeRecord(id){
+  if(!confirm('Delete this transaction? This cannot be undone.')) return;
+  const r = await api('deleteRecord', { tabName: viewingTab, id });
+  if(!r.ok){ alert(r.error || 'Could not delete.'); return; }
+  loadData();
+}
+
+function resetForm(){
+  document.getElementById('edit-id').value = '';
+  document.getElementById('f-kg').value = '';
+  document.getElementById('f-customer').value = '';
+  document.getElementById('f-rate').value = '';
+  document.getElementById('f-price').value = '';
+  document.getElementById('f-notes').value = '';
+  document.getElementById('f-date').valueAsDate = new Date();
+  document.getElementById('form-title').textContent = 'Add transaction';
+  document.getElementById('cancel-edit').style.display = 'none';
+  updateComputed();
+}
+
+/* ====== INIT ====== */
+(function init(){
+  const saved = localStorage.getItem('sbl_session');
+  if(saved){
+    session = JSON.parse(saved);
+    enterApp();
+  }
+})();
+</script>
+</body>
+</html>
