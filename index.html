@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Suly / Buzan Ledger</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&family=Noto+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
     --ink:#15130E;
@@ -23,6 +23,13 @@
   }
   *{box-sizing:border-box;}
   body{margin:0;background:var(--ink);color:var(--cream);font-family:'Inter',sans-serif;}
+  body[dir='rtl']{font-family:'Noto Sans Arabic','Inter',sans-serif;}
+  body[dir='rtl'] h1,body[dir='rtl'] h2,body[dir='rtl'] h3{font-family:'Noto Sans Arabic',serif;}
+  body[dir='rtl'] .sidebar{border-right:none;border-left:1px solid var(--line);}
+  body[dir='rtl'] .row-actions button{margin-right:0;margin-left:6px;}
+  .lang-switch{display:flex;gap:6px;margin-bottom:20px;}
+  .lang-switch button{flex:1;padding:6px 8px;font-size:12px;background:var(--surface-2);color:var(--muted);border:1px solid var(--line);}
+  .lang-switch button.active{background:var(--gold);color:#1A160E;border-color:var(--gold);}
   h1,h2,h3{font-family:'Fraunces',serif;font-weight:600;margin:0;}
   .num{font-family:'IBM Plex Mono',monospace;}
   a{color:inherit;}
@@ -100,24 +107,25 @@
 <!-- ============ LOGIN ============ -->
 <div id="login-screen">
   <div class="login-card">
-    <h1>Suly / Buzan Ledger</h1>
-    <p>Sign in to record and review transactions.</p>
+    <h1 data-i18n="brand">Suly / Buzan Ledger</h1>
+    <p data-i18n="loginSub">Sign in to record and review transactions.</p>
     <div id="login-error" class="error" style="display:none;"></div>
-    <label for="lu">Username</label>
+    <label for="lu" data-i18n="username">Username</label>
     <input id="lu" type="text" autocomplete="username">
-    <label for="lp">Password</label>
+    <label for="lp" data-i18n="password">Password</label>
     <input id="lp" type="password" autocomplete="current-password">
-    <button onclick="doLogin()" style="width:100%;">Sign in</button>
+    <button onclick="doLogin()" style="width:100%;" data-i18n="signIn">Sign in</button>
   </div>
 </div>
 
 <!-- ============ APP ============ -->
 <div id="app">
   <div class="sidebar">
-    <div class="brand">Suly / Buzan</div>
+    <div class="brand" data-i18n="brand">Suly / Buzan</div>
     <div class="who" id="who"></div>
     <div id="tab-list"></div>
-    <div class="signout" onclick="signOut()">Sign out</div>
+    <div class="lang-switch"><button id="lang-en" onclick="setLang('en')">English</button><button id="lang-ckb" onclick="setLang('ckb')">کوردی</button></div>
+    <div class="signout" onclick="signOut()" data-i18n="signOut">Sign out</div>
   </div>
 
   <div class="main">
@@ -125,54 +133,128 @@
     <div class="subhead" id="viewing-sub"></div>
 
     <div class="range-row">
-      <button class="chip" data-range="today" onclick="setRange('today')">Today</button>
-      <button class="chip" data-range="week" onclick="setRange('week')">This week</button>
-      <button class="chip" data-range="month" onclick="setRange('month')">This month</button>
-      <button class="chip" data-range="all" onclick="setRange('all')">All time</button>
-      <div><label style="margin-bottom:4px;">From</label><input type="date" id="range-from" onchange="setRange('custom')"></div>
-      <div><label style="margin-bottom:4px;">To</label><input type="date" id="range-to" onchange="setRange('custom')"></div>
+      <button class="chip" data-range="today" onclick="setRange('today')" data-i18n="today">Today</button>
+      <button class="chip" data-range="week" onclick="setRange('week')" data-i18n="thisWeek">This week</button>
+      <button class="chip" data-range="month" onclick="setRange('month')" data-i18n="thisMonth">This month</button>
+      <button class="chip" data-range="all" onclick="setRange('all')" data-i18n="allTime">All time</button>
+      <div><label style="margin-bottom:4px;" data-i18n="from">From</label><input type="date" id="range-from" onchange="setRange('custom')"></div>
+      <div><label style="margin-bottom:4px;" data-i18n="to">To</label><input type="date" id="range-to" onchange="setRange('custom')"></div>
     </div>
 
     <div class="summary-grid" id="summary-grid"></div>
     <div class="panel" id="balance-panel"></div>
 
     <div class="panel" id="entry-panel" style="display:none;">
-      <h3 id="form-title">Add transaction</h3>
+      <h3 id="form-title" data-i18n="addTransaction">Add transaction</h3>
       <input type="hidden" id="edit-id">
       <div class="form-grid">
-        <div><label>Date</label><input type="date" id="f-date"></div>
-        <div><label>Type</label>
+        <div><label data-i18n="date">Date</label><input type="date" id="f-date"></div>
+        <div><label data-i18n="type">Type</label>
           <select id="f-type">
-            <option>Sell Suly / Buy Buzan</option>
-            <option>Buy Suly / Sell Buzan</option>
+            <option value="Sell Suly / Buy Buzan" data-i18n="way1">Sell Suly / Buy Buzan</option>
+            <option value="Buy Suly / Sell Buzan" data-i18n="way2">Buy Suly / Sell Buzan</option>
           </select>
         </div>
-        <div><label>KG</label><input type="number" step="any" id="f-kg" oninput="updateComputed()"></div>
-        <div><label>Customer / phone</label><input type="text" id="f-customer"></div>
-        <div><label>Rate (per troy oz)</label><input type="number" step="any" id="f-rate" oninput="updateComputed()"></div>
-        <div><label>Negotiated price (per KG)</label><input type="number" step="any" id="f-price" oninput="updateComputed()"></div>
-        <div class="full"><label>Notes</label><input type="text" id="f-notes"></div>
+        <div><label data-i18n="kg">KG</label><input type="number" step="any" id="f-kg" oninput="updateComputed()"></div>
+        <div><label data-i18n="customer">Customer / phone</label><input type="text" id="f-customer"></div>
+        <div><label data-i18n="rate">Rate (per troy oz)</label><input type="number" step="any" id="f-rate" oninput="updateComputed()"></div>
+        <div><label data-i18n="price">Negotiated price (per KG)</label><input type="number" step="any" id="f-price" oninput="updateComputed()"></div>
+        <div class="full"><label data-i18n="notes">Notes</label><input type="text" id="f-notes"></div>
       </div>
       <div class="computed-row">
-        <div>Ounce<span class="num" id="c-ounce">0.00</span></div>
-        <div>Market price / KG<span class="num" id="c-market">$0.00</span></div>
-        <div>Margin<span class="num" id="c-margin"><span class="margin-pill">$0.00</span></span></div>
-        <div>Total<span class="num" id="c-total">$0.00</span></div>
+        <div data-i18n="ounce">Ounce<span class="num" id="c-ounce">0.00</span></div>
+        <div data-i18n="marketPrice">Market price / KG<span class="num" id="c-market">$0.00</span></div>
+        <div data-i18n="margin">Margin<span class="num" id="c-margin"><span class="margin-pill">$0.00</span></span></div>
+        <div data-i18n="total">Total<span class="num" id="c-total">$0.00</span></div>
       </div>
-      <button onclick="submitRecord()">Save transaction</button>
-      <button class="secondary" id="cancel-edit" style="display:none;margin-left:8px;" onclick="resetForm()">Cancel edit</button>
+      <button onclick="submitRecord()" data-i18n="saveTransaction">Save transaction</button>
+      <button class="secondary" id="cancel-edit" style="display:none;margin-left:8px;" onclick="resetForm()" data-i18n="cancelEdit">Cancel edit</button>
     </div>
 
     <div class="panel">
-      <h3>Transactions</h3>
+      <h3 data-i18n="transactions">Transactions</h3>
       <div id="table-wrap"><div class="empty">Loading…</div></div>
     </div>
   </div>
 </div>
 
 <script>
+/* ====== I18N ====== */
+const I18N = {
+  en: {
+    brand: 'Suly / Buzan Ledger', loginSub: 'Sign in to record and review transactions.',
+    username: 'Username', password: 'Password', signIn: 'Sign in', signOut: 'Sign out',
+    today: 'Today', thisWeek: 'This week', thisMonth: 'This month', allTime: 'All time',
+    from: 'From', to: 'To', addTransaction: 'Add transaction', editTransaction: 'Edit transaction',
+    date: 'Date', type: 'Type', way1: 'Sell Suly / Buy Buzan', way2: 'Buy Suly / Sell Buzan',
+    kg: 'KG', customer: 'Customer / phone', rate: 'Rate (per troy oz)', price: 'Negotiated price (per KG)',
+    notes: 'Notes', ounce: 'Ounce', marketPrice: 'Market price / KG', margin: 'Margin', total: 'Total',
+    saveTransaction: 'Save transaction', cancelEdit: 'Cancel edit', transactions: 'Transactions',
+    allEmployees: 'All employees', viewOnlySub: 'View-only — ask the admin to add or change transactions.',
+    editableSub: 'Add, edit, or review transactions for this tab.', combinedTitle: 'All employees — combined view',
+    combinedSub: 'Read-only combined summary across every tab.', selectEmployee: 'Select an individual employee tab to see line-by-line transactions.',
+    noTransactions: 'No transactions in this range.', loading: 'Loading…',
+    sulyBought: 'Suly bought', sulySold: 'Suly sold', buzanBought: 'Buzan bought', buzanSold: 'Buzan sold',
+    balanceTitle: 'Balance & income for this range', sulyLeft: 'Suly left to sell', buzanLeft: 'Buzan left to sell',
+    totalBought: 'Total bought', totalSold: 'Total sold', income: 'Income', incomePerKg: 'Income per KG',
+    avgMargin: 'Average margin', txnCount: 'Transactions', edit: 'Edit', delete: 'Delete',
+    fillRequired: 'Fill in date, KG, rate, and price.', confirmDelete: 'Delete this transaction? This cannot be undone.',
+    couldNotSave: 'Could not save.', couldNotDelete: 'Could not delete.', enterCreds: 'Enter username and password.',
+    invalidLogin: 'Invalid login.', couldNotReach: 'Could not reach the server. Check the connection.',
+    colType: 'Type', colKg: 'KG', colCustomer: 'Customer', colRate: 'Rate', colPrice: 'Price/KG',
+    colOunce: 'Ounce', colMarket: 'Market $', colMargin: 'Margin', colTotal: 'Total'
+  },
+  ckb: {
+    brand: 'تۆمارنامەی سولی / بوزان', loginSub: 'بچۆ ژوورەوە بۆ تۆمارکردن و پێداچوونەوەی مامەڵەکان.',
+    username: 'ناوی بەکارهێنەر', password: 'وشەی نهێنی', signIn: 'چوونەژوورەوە', signOut: 'چوونەدەرەوە',
+    today: 'ئەمڕۆ', thisWeek: 'ئەم هەفتەیە', thisMonth: 'ئەم مانگە', allTime: 'هەموو کات',
+    from: 'لە', to: 'بۆ', addTransaction: 'زیادکردنی مامەڵە', editTransaction: 'دەستکاریکردنی مامەڵە',
+    date: 'بەروار', type: 'جۆر', way1: 'فرۆشتنی سولی / کڕینی بوزان', way2: 'کڕینی سولی / فرۆشتنی بوزان',
+    kg: 'کیلۆگرام', customer: 'کڕیار / ژمارەی مۆبایل', rate: 'نرخ (بۆ ئۆنسی تروی)', price: 'نرخی ڕێککەوتوو (بۆ هەر کیلۆیەک)',
+    notes: 'تێبینی', ounce: 'ئۆنس', marketPrice: 'نرخی بازاڕ / کیلۆ', margin: 'جیاوازی نرخ', total: 'کۆی گشتی',
+    saveTransaction: 'پاشەکەوتکردنی مامەڵە', cancelEdit: 'هەڵوەشاندنەوەی دەستکاری', transactions: 'مامەڵەکان',
+    allEmployees: 'هەموو کارمەندەکان', viewOnlySub: 'تەنها بۆ بینین — داوا لە بەڕێوەبەر بکە بۆ زیادکردن یان گۆڕینی مامەڵەکان.',
+    editableSub: 'زیادکردن، دەستکاریکردن، یان پێداچوونەوەی مامەڵەکان بۆ ئەم لاپەڕەیە.', combinedTitle: 'هەموو کارمەندەکان — بینینی گشتی',
+    combinedSub: 'کورتەیەکی گشتیی تەنها بۆ بینین، بۆ هەموو لاپەڕەکان.', selectEmployee: 'یەک کارمەند هەڵبژێرە بۆ بینینی مامەڵەکان بە ڕیز.',
+    noTransactions: 'هیچ مامەڵەیەک لەم ماوەیەدا نییە.', loading: 'بارکردن...',
+    sulyBought: 'سولی کڕدراو', sulySold: 'سولی فرۆشراو', buzanBought: 'بوزان کڕدراو', buzanSold: 'بوزان فرۆشراو',
+    balanceTitle: 'باڵانس و داهات بۆ ئەم ماوەیە', sulyLeft: 'سولی ماوە بۆ فرۆشتن', buzanLeft: 'بوزان ماوە بۆ فرۆشتن',
+    totalBought: 'کۆی کڕین', totalSold: 'کۆی فرۆشتن', income: 'داهات', incomePerKg: 'داهات بۆ هەر کیلۆیەک',
+    avgMargin: 'تێکڕای قازانج', txnCount: 'ژمارەی مامەڵەکان', edit: 'دەستکاری', delete: 'سڕینەوە',
+    fillRequired: 'بەروار، کیلۆگرام، نرخ، و بەها پڕبکەرەوە.', confirmDelete: 'ئەم مامەڵەیە بسڕدرێتەوە؟ ناتوانرێت هەڵبوەشێندرێتەوە.',
+    couldNotSave: 'نەتوانرا پاشەکەوت بکرێت.', couldNotDelete: 'نەتوانرا بسڕدرێتەوە.', enterCreds: 'ناوی بەکارهێنەر و وشەی نهێنی بنووسە.',
+    invalidLogin: 'چوونەژوورەوە هەڵەیە.', couldNotReach: 'نەتوانرا پەیوەندی بە سێرڤەرەوە بکرێت. پەیوەندییەکەت بپشکنە.',
+    colType: 'جۆر', colKg: 'کیلۆ', colCustomer: 'کڕیار', colRate: 'نرخ', colPrice: 'نرخ/کیلۆ',
+    colOunce: 'ئۆنس', colMarket: 'نرخی بازاڕ', colMargin: 'جیاوازی', colTotal: 'کۆی گشتی'
+  }
+};
+let LANG = localStorage.getItem('sbl_lang') || 'en';
+function t(key){ return (I18N[LANG] && I18N[LANG][key]) || I18N.en[key] || key; }
+
+function setLang(lang){
+  LANG = lang;
+  localStorage.setItem('sbl_lang', lang);
+  document.body.setAttribute('dir', lang === 'ckb' ? 'rtl' : 'ltr');
+  document.getElementById('lang-en').classList.toggle('active', lang === 'en');
+  document.getElementById('lang-ckb').classList.toggle('active', lang === 'ckb');
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    // preserve any nested elements (like the computed-row <span>) inside labels
+    const nested = el.querySelector('span');
+    el.textContent = t(key);
+    if(nested) el.appendChild(nested);
+  });
+  if(session){
+    document.getElementById('viewing-sub').textContent = viewingTab === 'ALL' ? t('combinedSub') :
+      (session.role === 'admin' ? t('editableSub') : t('viewOnlySub'));
+    if(viewingTab === 'ALL') document.getElementById('viewing-title').textContent = t('combinedTitle');
+    buildSidebar();
+    loadData();
+  }
+}
+
 /* ====== CONFIG ====== */
-const API_URL = 'https://script.google.com/macros/s/AKfycbxup8Yif3UFbWLk493-cdX8eLabhUyia_b8e5nLCV4dxRgaIEkReQdXsgk2HfdwDIZs/exec';
+const API_URL = 'PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE';
 
 /* ====== STATE ====== */
 let session = null;      // {username, password, role, tabName, fullName}
@@ -198,15 +280,15 @@ async function doLogin(){
   const password = document.getElementById('lp').value;
   const errEl = document.getElementById('login-error');
   errEl.style.display = 'none';
-  if(!username || !password){ errEl.textContent = 'Enter username and password.'; errEl.style.display='block'; return; }
+  if(!username || !password){ errEl.textContent = t('enterCreds'); errEl.style.display='block'; return; }
   try{
     const r = await api('login', { username, password });
-    if(!r.ok){ errEl.textContent = r.error || 'Invalid login.'; errEl.style.display='block'; return; }
+    if(!r.ok){ errEl.textContent = r.error || t('invalidLogin'); errEl.style.display='block'; return; }
     session = { username, password, role: r.role, tabName: r.tabName, fullName: r.fullName };
     localStorage.setItem('sbl_session', JSON.stringify(session));
     enterApp();
   }catch(e){
-    errEl.textContent = 'Could not reach the server. Check the connection.';
+    errEl.textContent = t('couldNotReach');
     errEl.style.display = 'block';
   }
 }
@@ -225,7 +307,7 @@ async function enterApp(){
   viewingTab = session.tabName;
   document.getElementById('entry-panel').style.display = (session.role === 'admin') ? 'block' : 'none';
   document.getElementById('viewing-title').textContent = viewingTab;
-  document.getElementById('viewing-sub').textContent = session.role === 'admin' ? 'Add, edit, or review transactions for this tab.' : 'View-only — ask the admin to add or change transactions.';
+  document.getElementById('viewing-sub').textContent = session.role === 'admin' ? t('editableSub') : t('viewOnlySub');
   await buildSidebar();
   document.getElementById('f-date').valueAsDate = new Date();
   setRange('today');
@@ -239,7 +321,7 @@ async function buildSidebar(){
     employees = r.ok ? r.employees : [];
     const allBtn = document.createElement('button');
     allBtn.className = 'tab-btn' + (viewingTab==='ALL' ? ' active' : '');
-    allBtn.textContent = 'All employees';
+    allBtn.textContent = t('allEmployees');
     allBtn.onclick = () => switchTab('ALL');
     list.appendChild(allBtn);
     employees.forEach(emp => {
@@ -263,8 +345,8 @@ function switchTab(tabName){
   event.target.classList.add('active');
   const canEdit = (tabName !== 'ALL') && session.role === 'admin';
   document.getElementById('entry-panel').style.display = canEdit ? 'block' : 'none';
-  document.getElementById('viewing-title').textContent = tabName === 'ALL' ? 'All employees — combined view' : tabName;
-  document.getElementById('viewing-sub').textContent = tabName === 'ALL' ? 'Read-only combined summary across every tab.' : 'Add, edit, or review transactions for this tab.';
+  document.getElementById('viewing-title').textContent = tabName === 'ALL' ? t('combinedTitle') : tabName;
+  document.getElementById('viewing-sub').textContent = tabName === 'ALL' ? t('combinedSub') : t('editableSub');
   loadData();
 }
 
@@ -300,15 +382,18 @@ function ymd(d){ return d.toISOString().slice(0,10); }
 async function loadData(){
   const from = document.getElementById('range-from').value;
   const to = document.getElementById('range-to').value;
+  document.getElementById('table-wrap').innerHTML = '<div class="empty">'+t('loading')+'</div>';
 
-  const sumR = await api('summary', { tabName: viewingTab, dateFrom: from, dateTo: to });
+  const summaryPromise = api('summary', { tabName: viewingTab, dateFrom: from, dateTo: to });
+  const recordsPromise = (viewingTab === 'ALL') ? Promise.resolve(null) : api('listRecords', { tabName: viewingTab, dateFrom: from, dateTo: to });
+
+  const [sumR, listR] = await Promise.all([summaryPromise, recordsPromise]);
   renderSummary(sumR);
 
   if(viewingTab === 'ALL'){
-    document.getElementById('table-wrap').innerHTML = '<div class="empty">Select an individual employee tab to see line-by-line transactions.</div>';
+    document.getElementById('table-wrap').innerHTML = '<div class="empty">'+t('selectEmployee')+'</div>';
     return;
   }
-  const listR = await api('listRecords', { tabName: viewingTab, dateFrom: from, dateTo: to });
   currentRecords = listR.ok ? listR.records : [];
   renderTable();
 }
@@ -316,7 +401,7 @@ async function loadData(){
 function renderSummary(r){
   const grid = document.getElementById('summary-grid');
   const bal = document.getElementById('balance-panel');
-  if(!r.ok){ grid.innerHTML = ''; bal.innerHTML = '<div class="empty">Could not load summary.</div>'; return; }
+  if(!r.ok){ grid.innerHTML = ''; bal.innerHTML = '<div class="empty">'+t('couldNotReach')+'</div>'; return; }
 
   function card(label, kg, total){
     return '<div class="summary-card"><div class="type">'+label+'</div>'+
@@ -324,29 +409,29 @@ function renderSummary(r){
       '<div class="amt num">$'+Math.round(total).toLocaleString()+'</div></div>';
   }
   grid.innerHTML =
-    card('Suly bought', r.suly.boughtKg, r.suly.boughtTotal) +
-    card('Suly sold', r.suly.soldKg, r.suly.soldTotal) +
-    card('Buzan bought', r.buzan.boughtKg, r.buzan.boughtTotal) +
-    card('Buzan sold', r.buzan.soldKg, r.buzan.soldTotal);
+    card(t('sulyBought'), r.suly.boughtKg, r.suly.boughtTotal) +
+    card(t('sulySold'), r.suly.soldKg, r.suly.soldTotal) +
+    card(t('buzanBought'), r.buzan.boughtKg, r.buzan.boughtTotal) +
+    card(t('buzanSold'), r.buzan.soldKg, r.buzan.soldTotal);
 
   const incomeClass = r.income >= 0 ? 'margin-pos' : 'margin-neg';
   bal.innerHTML =
-    '<h3>Balance &amp; income for this range</h3>'+
+    '<h3>'+t('balanceTitle')+'</h3>'+
     '<div class="computed-row">'+
-      '<div>Suly left to sell<span class="num">'+r.sulyBalanceKg.toFixed(2)+' kg</span></div>'+
-      '<div>Buzan left to sell<span class="num">'+r.buzanBalanceKg.toFixed(2)+' kg</span></div>'+
-      '<div>Total bought<span class="num">$'+Math.round(r.totalBuy).toLocaleString()+'</span></div>'+
-      '<div>Total sold<span class="num">$'+Math.round(r.totalSell).toLocaleString()+'</span></div>'+
-      '<div>Income<span class="num"><span class="margin-pill '+incomeClass+'">$'+Math.round(r.income).toLocaleString()+'</span></span></div>'+
-      '<div>Income per KG<span class="num">$'+r.incomePerKg.toFixed(2)+'</span></div>'+
-      '<div>Average margin<span class="num">$'+r.avgMargin.toFixed(2)+'</span></div>'+
-      '<div>Transactions<span class="num">'+r.recordCount+'</span></div>'+
+      '<div>'+t('sulyLeft')+'<span class="num">'+r.sulyBalanceKg.toFixed(2)+' kg</span></div>'+
+      '<div>'+t('buzanLeft')+'<span class="num">'+r.buzanBalanceKg.toFixed(2)+' kg</span></div>'+
+      '<div>'+t('totalBought')+'<span class="num">$'+Math.round(r.totalBuy).toLocaleString()+'</span></div>'+
+      '<div>'+t('totalSold')+'<span class="num">$'+Math.round(r.totalSell).toLocaleString()+'</span></div>'+
+      '<div>'+t('income')+'<span class="num"><span class="margin-pill '+incomeClass+'">$'+Math.round(r.income).toLocaleString()+'</span></span></div>'+
+      '<div>'+t('incomePerKg')+'<span class="num">$'+r.incomePerKg.toFixed(2)+'</span></div>'+
+      '<div>'+t('avgMargin')+'<span class="num">$'+r.avgMargin.toFixed(2)+'</span></div>'+
+      '<div>'+t('txnCount')+'<span class="num">'+r.recordCount+'</span></div>'+
     '</div>';
 }
 
 function renderTable(){
   const wrap = document.getElementById('table-wrap');
-  if(!currentRecords.length){ wrap.innerHTML = '<div class="empty">No transactions in this range.</div>'; return; }
+  if(!currentRecords.length){ wrap.innerHTML = '<div class="empty">'+t('noTransactions')+'</div>'; return; }
 
   const canEdit = session.role === 'admin';
   const byDate = {};
@@ -365,7 +450,7 @@ function renderTable(){
 
     html += '<h3 style="margin:20px 0 8px;font-size:15px;">'+date+
       '<span style="color:var(--muted);font-weight:400;font-size:13px;"> · '+dayKg.toFixed(2)+' kg · $'+Math.round(dayTotal).toLocaleString()+'</span></h3>';
-    html += '<table><thead><tr><th>Type</th><th>KG</th><th>Customer</th><th>Rate</th><th>Price/KG</th><th>Ounce</th><th>Market $</th><th>Margin</th><th>Total</th>'+(canEdit?'<th></th>':'')+'</tr></thead><tbody>';
+    html += '<table><thead><tr><th>'+t('colType')+'</th><th>'+t('colKg')+'</th><th>'+t('colCustomer')+'</th><th>'+t('colRate')+'</th><th>'+t('colPrice')+'</th><th>'+t('colOunce')+'</th><th>'+t('colMarket')+'</th><th>'+t('colMargin')+'</th><th>'+t('colTotal')+'</th>'+(canEdit?'<th></th>':'')+'</tr></thead><tbody>';
     recs.forEach(r=>{
       const marginClass = Number(r.Margin) >= 0 ? 'margin-pos' : 'margin-neg';
       html += '<tr>'+
@@ -380,8 +465,8 @@ function renderTable(){
         '<td class="num">$'+Math.round(r.Total).toLocaleString()+'</td>';
       if(canEdit){
         html += '<td class="row-actions">'+
-          '<button class="secondary" onclick="editRecord(\''+r.ID+'\')">Edit</button>'+
-          '<button class="danger" onclick="removeRecord(\''+r.ID+'\')">Delete</button>'+
+          '<button class="secondary" onclick="editRecord(\''+r.ID+'\')">'+t('edit')+'</button>'+
+          '<button class="danger" onclick="removeRecord(\''+r.ID+'\')">'+t('delete')+'</button>'+
         '</td>';
       }
       html += '</tr>';
@@ -427,10 +512,10 @@ async function submitRecord(){
     notes: document.getElementById('f-notes').value
   };
   if(!payload.date || !payload.kg || !payload.rate || !payload.negotiatedPrice){
-    alert('Fill in date, KG, rate, and price.'); return;
+    alert(t('fillRequired')); return;
   }
   const r = id ? await api('updateRecord', Object.assign({id}, payload)) : await api('addRecord', payload);
-  if(!r.ok){ alert(r.error || 'Could not save.'); return; }
+  if(!r.ok){ alert(r.error || t('couldNotSave')); return; }
   resetForm();
   loadData();
 }
@@ -446,16 +531,16 @@ function editRecord(id){
   document.getElementById('f-rate').value = r.Rate;
   document.getElementById('f-price').value = r.NegotiatedPrice;
   document.getElementById('f-notes').value = r.Notes;
-  document.getElementById('form-title').textContent = 'Edit transaction';
+  document.getElementById('form-title').textContent = t('editTransaction');
   document.getElementById('cancel-edit').style.display = 'inline-block';
   updateComputed();
   window.scrollTo({top:0, behavior:'smooth'});
 }
 
 async function removeRecord(id){
-  if(!confirm('Delete this transaction? This cannot be undone.')) return;
+  if(!confirm(t('confirmDelete'))) return;
   const r = await api('deleteRecord', { tabName: viewingTab, id });
-  if(!r.ok){ alert(r.error || 'Could not delete.'); return; }
+  if(!r.ok){ alert(r.error || t('couldNotDelete')); return; }
   loadData();
 }
 
@@ -467,13 +552,22 @@ function resetForm(){
   document.getElementById('f-price').value = '';
   document.getElementById('f-notes').value = '';
   document.getElementById('f-date').valueAsDate = new Date();
-  document.getElementById('form-title').textContent = 'Add transaction';
+  document.getElementById('form-title').textContent = t('addTransaction');
   document.getElementById('cancel-edit').style.display = 'none';
   updateComputed();
 }
 
 /* ====== INIT ====== */
 (function init(){
+  document.body.setAttribute('dir', LANG === 'ckb' ? 'rtl' : 'ltr');
+  document.getElementById('lang-en').classList.toggle('active', LANG === 'en');
+  document.getElementById('lang-ckb').classList.toggle('active', LANG === 'ckb');
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    const nested = el.querySelector('span');
+    el.textContent = t(key);
+    if(nested) el.appendChild(nested);
+  });
   const saved = localStorage.getItem('sbl_session');
   if(saved){
     session = JSON.parse(saved);
