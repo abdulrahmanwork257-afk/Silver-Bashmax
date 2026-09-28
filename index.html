@@ -143,10 +143,8 @@
         <div><label>Date</label><input type="date" id="f-date"></div>
         <div><label>Type</label>
           <select id="f-type">
-            <option>Sell Suly</option>
-            <option>Buy Buzan</option>
-            <option>Sell Buzan</option>
-            <option>Buy Suly</option>
+            <option>Sell Suly / Buy Buzan</option>
+            <option>Buy Suly / Sell Buzan</option>
           </select>
         </div>
         <div><label>KG</label><input type="number" step="any" id="f-kg" oninput="updateComputed()"></div>
@@ -174,7 +172,7 @@
 
 <script>
 /* ====== CONFIG ====== */
-const API_URL = 'https://script.google.com/macros/s/AKfycby2h3k7CPEnOrju7kqY22Mzc2jwWLsmeCtA85BAVWbX03-2IxkRjIZvPCkKx4NS9VkH/exec';
+const API_URL = 'PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE';
 
 /* ====== STATE ====== */
 let session = null;      // {username, password, role, tabName, fullName}
@@ -371,7 +369,7 @@ function renderTable(){
     recs.forEach(r=>{
       const marginClass = Number(r.Margin) >= 0 ? 'margin-pos' : 'margin-neg';
       html += '<tr>'+
-        '<td>'+r.Type+'</td>'+
+        '<td>'+wayOf(r.Type)+'</td>'+
         '<td class="num">'+Number(r.KG).toFixed(2)+'</td>'+
         '<td>'+(r.Customer||'')+'</td>'+
         '<td class="num">'+Number(r.Rate).toFixed(3)+'</td>'+
@@ -393,6 +391,11 @@ function renderTable(){
   wrap.innerHTML = html;
 }
 function fmtDate(d){ return String(d).slice(0,10); }
+function wayOf(t){
+  t = String(t);
+  if(t === 'Sell Suly' || t === 'Buy Buzan' || t === 'Sell Suly / Buy Buzan') return 'Sell Suly / Buy Buzan';
+  return 'Buy Suly / Sell Buzan';
+}
 
 /* ====== FORM / COMPUTED FIELDS ====== */
 function updateComputed(){
@@ -437,7 +440,7 @@ function editRecord(id){
   if(!r) return;
   document.getElementById('edit-id').value = r.ID;
   document.getElementById('f-date').value = fmtDate(r.Date);
-  document.getElementById('f-type').value = r.Type;
+  document.getElementById('f-type').value = wayOf(r.Type);
   document.getElementById('f-kg').value = r.KG;
   document.getElementById('f-customer').value = r.Customer;
   document.getElementById('f-rate').value = r.Rate;
