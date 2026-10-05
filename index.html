@@ -326,6 +326,7 @@ const I18N = {
     invalidLogin: 'Invalid username or password.', couldNotReach: 'Could not reach the server. Check the connection.',
     colType: 'Type', colKg: 'KG', colCustomer: 'Customer', colRate: 'Rate', colPrice: 'Price/KG',
     colOunce: 'Ounce', colMarket: 'Market $', colMargin: 'Margin', colTotal: 'Total',
+    colEnteredBy: 'Entered by', colEmployee: 'Employee', netDiff: 'Net', weightedAvg: 'Weighted avg price',
     addEmployee: '+ Add employee', save: 'Save', cancel: 'Cancel', fillAllFields: 'Fill in all fields.',
     downloadXlsx: '⬇ Download XLSX', downloadPdf: '⬇ Download PDF', setupAlreadyDone: 'An admin account already exists — sign in instead.'
   },
@@ -355,6 +356,7 @@ const I18N = {
     invalidLogin: 'ناوی بەکارهێنەر یان وشەی نهێنی هەڵەیە.', couldNotReach: 'نەتوانرا پەیوەندی بکرێت. تکایە پەیوەندییەکەت بپشکنە.',
     colType: 'جۆر', colKg: 'کیلۆ', colCustomer: 'کڕیار', colRate: 'نرخ', colPrice: 'نرخ/کیلۆ',
     colOunce: 'ئۆنس', colMarket: 'نرخی بازاڕ', colMargin: 'جیاوازی', colTotal: 'کۆی گشتی',
+    colEnteredBy: 'تۆمارکراو لەلایەن', colEmployee: 'کارمەند', netDiff: 'دەرئەنجام', weightedAvg: 'تێکڕای نرخی باری کێشراو',
     addEmployee: '+ زیادکردنی کارمەند', save: 'پاشەکەوتکردن', cancel: 'هەڵوەشاندنەوە', fillAllFields: 'هەموو خانەکان پڕبکەرەوە.',
     downloadXlsx: '⬇ داگرتنی XLSX', downloadPdf: '⬇ داگرتنی PDF', setupAlreadyDone: 'هەژماری بەڕێوەبەر پێشتر دروستکراوە — بچۆ ژوورەوە.'
   }
@@ -562,37 +564,43 @@ function setRange(mode){
 }
 function ymd(d){ return d.toISOString().slice(0,10); }
 
-/* ====== LIVE DATA (Firestore listener drives table + both summary panels) ====== */
+/* ====== LIVE DATA ======
+   One Firestore listener per tab (no date filter in the query at all — this avoids
+   ever needing a composite index, and means switching Today/Week/Month/Custom is
+   instant, filtered in the browser from data already in memory). */
+let allRecords = [];
+let subscribedTab = null;
+
 function loadData(){
+  if(subscribedTab === viewingTab){ applyRangeFilter(); return; }
   if(unsubscribe){ unsubscribe(); unsubscribe = null; }
-  const from = document.getElementById('range-from').value;
-  const to = document.getElementById('range-to').value;
+  subscribedTab = viewingTab;
   document.getElementById('table-wrap').innerHTML = '<div class="empty">'+t('loading')+'</div>';
   document.getElementById('export-row').style.display = 'none';
 
   let q = db.collection('records');
   if(viewingTab !== 'ALL') q = q.where('tabName', '==', viewingTab);
-  if(from) q = q.where('date', '>=', from);
-  if(to) q = q.where('date', '<=', to);
 
   unsubscribe = q.onSnapshot(snap => {
-    currentRecords = snap.docs.map(d => Object.assign({ id: d.id }, d.data()));
-    renderAll();
+    allRecords = snap.docs.map(d => Object.assign({ id: d.id }, d.data()));
+    applyRangeFilter();
   }, err => {
     document.getElementById('table-wrap').innerHTML = '<div class="empty">'+t('couldNotReach')+'</div>';
     console.error(err);
   });
 }
 
+function applyRangeFilter(){
+  const from = document.getElementById('range-from').value;
+  const to = document.getElementById('range-to').value;
+  currentRecords = allRecords.filter(r => (!from || r.date >= from) && (!to || r.date <= to));
+  renderAll();
+}
+
 function renderAll(){
   renderWayCards();
   renderBalance();
-  if(viewingTab === 'ALL'){
-    document.getElementById('table-wrap').innerHTML = '<div class="empty">'+t('selectEmployee')+'</div>';
-    document.getElementById('export-row').style.display = 'none';
-    return;
-  }
-  document.getElementById('export-row').style.display = currentRecords.length ? 'flex' : 'none';
+  document.getElementById('export-row').style.display = (currentRecords.length && viewingTab !== 'ALL') ? 'flex' : 'none';
   renderTable();
 }
 
@@ -608,11 +616,15 @@ function computeTotals(){
   });
   const totalBuy = suly.boughtTotal + buzan.boughtTotal, totalSell = suly.soldTotal + buzan.soldTotal;
   const totalKg = currentRecords.reduce((s,r)=>s+(Number(r.kg)||0),0);
+  const kgPriceSum = currentRecords.reduce((s,r)=>s+((Number(r.kg)||0)*(Number(r.negotiatedPrice)||0)),0);
   const income = totalSell - totalBuy;
   return {
     suly, buzan, totalBuy, totalSell, income,
     sulyBalanceKg: suly.boughtKg - suly.soldKg, buzanBalanceKg: buzan.boughtKg - buzan.soldKg,
     incomePerKg: totalKg ? income/totalKg : 0, avgMargin: currentRecords.length ? totalMargin/currentRecords.length : 0,
+    weightedAvgPrice: totalKg ? kgPriceSum/totalKg : 0,
+    way1Net: suly.soldTotal - buzan.boughtTotal,   // Sell Suly / Buy Buzan
+    way2Net: buzan.soldTotal - suly.boughtTotal,   // Buy Suly / Sell Buzan
     recordCount: currentRecords.length
   };
 }
@@ -623,12 +635,16 @@ function renderWayCards(){
   function leg(label, kg, total){
     return '<div class="leg"><div><div class="label">'+label+'</div><div class="val num">'+kg.toFixed(2)+' kg</div></div><div class="amt num">$'+Math.round(total).toLocaleString()+'</div></div>';
   }
+  function netRow(net){
+    const cls = net >= 0 ? 'margin-pos' : 'margin-neg';
+    return '<div class="leg"><div class="label">'+t('netDiff')+'</div><span class="margin-pill '+cls+'">$'+Math.round(net).toLocaleString()+'</span></div>';
+  }
   grid.innerHTML =
     '<div class="way-card glass"><h3>'+t('way1Title')+'</h3><div class="rows">'+
-      leg(t('sulySold'), r.suly.soldKg, r.suly.soldTotal) + leg(t('buzanBought'), r.buzan.boughtKg, r.buzan.boughtTotal) +
+      leg(t('sulySold'), r.suly.soldKg, r.suly.soldTotal) + leg(t('buzanBought'), r.buzan.boughtKg, r.buzan.boughtTotal) + netRow(r.way1Net) +
     '</div></div>'+
     '<div class="way-card glass"><h3>'+t('way2Title')+'</h3><div class="rows">'+
-      leg(t('sulyBought'), r.suly.boughtKg, r.suly.boughtTotal) + leg(t('buzanSold'), r.buzan.soldKg, r.buzan.soldTotal) +
+      leg(t('sulyBought'), r.suly.boughtKg, r.suly.boughtTotal) + leg(t('buzanSold'), r.buzan.soldKg, r.buzan.soldTotal) + netRow(r.way2Net) +
     '</div></div>';
 }
 
@@ -646,30 +662,39 @@ function renderBalance(){
       '<div>'+t('income')+'<span class="num"><span class="margin-pill '+incomeClass+'">$'+Math.round(r.income).toLocaleString()+'</span></span></div>'+
       '<div>'+t('incomePerKg')+'<span class="num">$'+r.incomePerKg.toFixed(2)+'</span></div>'+
       '<div>'+t('avgMargin')+'<span class="num">$'+r.avgMargin.toFixed(2)+'</span></div>'+
+      '<div>'+t('weightedAvg')+'<span class="num">$'+r.weightedAvgPrice.toFixed(2)+'</span></div>'+
       '<div>'+t('txnCount')+'<span class="num">'+r.recordCount+'</span></div>'+
     '</div>';
+}
+
+function tsMillis(r){
+  if(r.timestamp && typeof r.timestamp.toMillis === 'function') return r.timestamp.toMillis();
+  return 0; // a record whose server timestamp hasn't synced yet sorts first, not last
 }
 
 function renderTable(){
   const wrap = document.getElementById('table-wrap');
   if(!currentRecords.length){ wrap.innerHTML = '<div class="empty">'+t('noTransactions')+'</div>'; return; }
-  const canEdit = session.role === 'admin';
+  const canEdit = session.role === 'admin' && viewingTab !== 'ALL';
+  const showEmployee = viewingTab === 'ALL';
   const byDate = {};
   currentRecords.forEach(r=>{ const d = r.date; if(!byDate[d]) byDate[d]=[]; byDate[d].push(r); });
   const dates = Object.keys(byDate).sort().reverse();
 
   let html = '';
   dates.forEach(date=>{
-    const recs = byDate[date];
+    // oldest-entered first, most recently added last — so a new entry lands at the bottom of its day
+    const recs = byDate[date].slice().sort((a,b)=> tsMillis(a) - tsMillis(b));
     let dayKg=0, dayTotal=0;
     recs.forEach(r=>{ dayKg += Number(r.kg)||0; dayTotal += Number(r.total)||0; });
     html += '<h3 style="margin:20px 0 8px;font-size:15px;">'+date+
       '<span style="color:var(--muted);font-weight:400;font-size:13px;"> · '+dayKg.toFixed(2)+' kg · $'+Math.round(dayTotal).toLocaleString()+'</span></h3>';
-    html += '<table><thead><tr><th>'+t('colType')+'</th><th>'+t('colKg')+'</th><th>'+t('colCustomer')+'</th><th>'+t('colRate')+'</th><th>'+t('colPrice')+'</th><th>'+t('colOunce')+'</th><th>'+t('colMarket')+'</th><th>'+t('colMargin')+'</th><th>'+t('colTotal')+'</th>'+(canEdit?'<th></th>':'')+'</tr></thead><tbody>';
+    html += '<table><thead><tr>'+(showEmployee?'<th>'+t('colEmployee')+'</th>':'')+'<th>'+t('colType')+'</th><th>'+t('colKg')+'</th><th>'+t('colCustomer')+'</th><th>'+t('colRate')+'</th><th>'+t('colPrice')+'</th><th>'+t('colOunce')+'</th><th>'+t('colMarket')+'</th><th>'+t('colMargin')+'</th><th>'+t('colTotal')+'</th><th>'+t('colEnteredBy')+'</th>'+(canEdit?'<th></th>':'')+'</tr></thead><tbody>';
     recs.forEach(r=>{
       const marginClass = Number(r.margin) >= 0 ? 'margin-pos' : 'margin-neg';
       const wayLabel = r.type === WAY1 ? t('way1') : t('way2');
       html += '<tr>'+
+        (showEmployee ? '<td>'+(r.tabName||'')+'</td>' : '')+
         '<td>'+wayLabel+'</td>'+
         '<td class="num">'+Number(r.kg).toFixed(2)+'</td>'+
         '<td>'+(r.customer||'')+'</td>'+
@@ -678,7 +703,8 @@ function renderTable(){
         '<td class="num">'+Number(r.ounce).toFixed(3)+'</td>'+
         '<td class="num">$'+Number(r.marketPrice).toFixed(2)+'</td>'+
         '<td class="num"><span class="margin-pill '+marginClass+'">$'+Number(r.margin).toFixed(2)+'</span></td>'+
-        '<td class="num">$'+Math.round(r.total).toLocaleString()+'</td>';
+        '<td class="num">$'+Math.round(r.total).toLocaleString()+'</td>'+
+        '<td>'+(r.enteredBy||'')+'</td>';
       if(canEdit){
         html += '<td class="row-actions">'+
           '<button class="secondary" data-edit-id="'+r.id+'">'+t('edit')+'</button>'+
@@ -773,7 +799,8 @@ function exportRows(){
   return currentRecords.slice().sort((a,b)=> a.date < b.date ? 1 : -1).map(r => ({
     Date: r.date, Type: r.type === WAY1 ? t('way1') : t('way2'), KG: Number(r.kg),
     Customer: r.customer || '', Rate: Number(r.rate), 'Price/KG': Number(r.negotiatedPrice),
-    Ounce: Number(r.ounce), 'Market $/KG': Number(r.marketPrice), Margin: Number(r.margin), Total: Number(r.total)
+    Ounce: Number(r.ounce), 'Market $/KG': Number(r.marketPrice), Margin: Number(r.margin), Total: Number(r.total),
+    'Entered by': r.enteredBy || ''
   }));
 }
 function exportXlsx(){
