@@ -1,149 +1,162 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" id="html-root">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
 <title>Suly / Buzan Ledger</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=IBM+Plex+Mono:wght@500;600&family=Inter:wght@400;500;600&family=Noto+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet">
+
+<!-- Firebase (compat SDK — plain <script> tags, no build step) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+<!-- Export libraries -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+
 <style>
   :root{
-    --ink:#15130E;
-    --surface:#1E1B14;
-    --surface-2:#26221A;
-    --line:#3A3529;
-    --gold:#C89B4A;
-    --gold-soft:#8A6D3A;
-    --silver:#9AA3AE;
-    --cream:#ECE6D8;
-    --muted:#9A8F78;
-    --green-bg:#1E3324; --green-fg:#7FD99A;
-    --red-bg:#3A1F1F; --red-fg:#E38A8A;
-    --radius:3px;
+    --bg1:#EEF2F7; --bg2:#FBFAF8;
+    --glass:rgba(255,255,255,.58); --glass-strong:rgba(255,255,255,.82);
+    --border:rgba(255,255,255,.65); --border-soft:rgba(0,0,0,.07);
+    --ink:#1C1C1E; --muted:#6E6E73; --muted-2:#8E8E93;
+    --gold:#B8860B; --gold-soft:#D8A93A; --gold-ghost:rgba(184,134,11,.12);
+    --green-bg:rgba(52,199,89,.16); --green-fg:#1C7C33;
+    --red-bg:rgba(255,59,48,.14); --red-fg:#C62828;
+    --radius:20px; --radius-sm:14px; --radius-xs:10px;
   }
   *{box-sizing:border-box;}
-  body{margin:0;background:var(--ink);color:var(--cream);font-family:'Inter',sans-serif;}
-  body[dir='rtl']{font-family:'Noto Sans Arabic','Inter',sans-serif;}
-  body[dir='rtl'] h1,body[dir='rtl'] h2,body[dir='rtl'] h3{font-family:'Noto Sans Arabic',serif;}
-  body[dir='rtl'] .sidebar{border-right:none;border-left:1px solid var(--line);}
-  body[dir='rtl'] .row-actions button{margin-right:0;margin-left:6px;}
-  .lang-switch{display:flex;gap:6px;margin-bottom:20px;}
-  .lang-switch button{flex:1;padding:6px 8px;font-size:12px;background:var(--surface-2);color:var(--muted);border:1px solid var(--line);}
-  .lang-switch button.active{background:var(--gold);color:#1A160E;border-color:var(--gold);}
-  h1,h2,h3{font-family:'Fraunces',serif;font-weight:600;margin:0;}
-  .num{font-family:'IBM Plex Mono',monospace;}
+  body{
+    margin:0;min-height:100vh;color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,'Inter',sans-serif;
+    background:
+      radial-gradient(circle at 15% 0%, rgba(216,169,58,.10), transparent 45%),
+      radial-gradient(circle at 100% 20%, rgba(90,140,220,.08), transparent 40%),
+      linear-gradient(160deg,var(--bg1),var(--bg2) 55%,#ffffff);
+    background-attachment:fixed;
+  }
+  body[dir='rtl']{font-family:'Noto Sans Arabic',-apple-system,sans-serif;}
+  h1,h2,h3{margin:0;font-weight:700;letter-spacing:-.01em;}
   a{color:inherit;}
+  .num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum";}
+
+  .glass{
+    background:var(--glass); backdrop-filter:blur(26px) saturate(180%); -webkit-backdrop-filter:blur(26px) saturate(180%);
+    border:1px solid var(--border); border-radius:var(--radius);
+    box-shadow:0 10px 30px rgba(31,38,135,.08), inset 0 1px 0 rgba(255,255,255,.5);
+  }
 
   /* ---- Login ---- */
   #login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
-  .login-card{width:100%;max-width:360px;}
-  .login-card h1{font-size:28px;color:var(--gold);margin-bottom:4px;}
-  .login-card p{color:var(--muted);margin:0 0 28px;font-size:14px;}
-  label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px;letter-spacing:.02em;}
+  .login-card{width:100%;max-width:380px;padding:36px;}
+  .login-card h1{font-size:26px;color:var(--ink);margin-bottom:4px;}
+  .login-card p{color:var(--muted);margin:0 0 26px;font-size:14px;}
+  label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:600;}
   input,select,textarea{
-    width:100%;background:var(--surface-2);border:1px solid var(--line);color:var(--cream);
-    padding:10px 12px;border-radius:var(--radius);font-size:14px;font-family:inherit;margin-bottom:16px;
+    width:100%;background:rgba(255,255,255,.7);border:1px solid var(--border-soft);color:var(--ink);
+    padding:12px 14px;border-radius:var(--radius-sm);font-size:14px;font-family:inherit;margin-bottom:16px;
   }
-  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold-soft);}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold-soft);background:#fff;}
+  input:hover,select:hover{border-color:var(--gold-soft);}
   button{
-    background:var(--gold);color:#1A160E;border:none;padding:11px 18px;border-radius:var(--radius);
-    font-size:14px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;
+    background:var(--gold);color:#fff;border:none;padding:12px 20px;border-radius:999px;
+    font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:transform .12s,background .15s;
   }
-  button:hover{background:#D8AC5C;}
-  button.secondary{background:transparent;color:var(--cream);border:1px solid var(--line);}
-  button.secondary:hover{background:var(--surface-2);}
-  button.danger{background:transparent;color:var(--red-fg);border:1px solid var(--red-fg);padding:6px 10px;font-size:12px;}
+  button:hover{background:#A4780A;}
+  button:active{transform:scale(.97);}
+  button.secondary{background:var(--glass-strong);color:var(--ink);border:1px solid var(--border-soft);}
+  button.secondary:hover{background:#fff;}
+  button.ghost{background:transparent;color:var(--gold);border:1px solid var(--gold-ghost);padding:8px 14px;font-size:13px;}
+  button.danger{background:transparent;color:var(--red-fg);border:1px solid rgba(255,59,48,.3);padding:7px 12px;font-size:12px;}
+  button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--gold);outline-offset:1px;}
+  .link-btn{background:none;border:none;color:var(--gold);font-size:13px;cursor:pointer;padding:0;text-decoration:underline;}
   .error{color:var(--red-fg);font-size:13px;margin:-8px 0 16px;}
+  .hint{color:var(--muted-2);font-size:12px;margin-top:-8px;margin-bottom:16px;}
 
   /* ---- App shell ---- */
   #app{display:none;min-height:100vh;}
   #app.active{display:flex;}
-  .sidebar{width:220px;background:var(--surface);border-right:1px solid var(--line);padding:24px 16px;flex-shrink:0;}
-  .sidebar .brand{font-size:18px;color:var(--gold);margin-bottom:28px;}
-  .sidebar .who{font-size:12px;color:var(--muted);margin-bottom:24px;}
-  .tab-btn{display:block;width:100%;text-align:left;background:none;border:none;color:var(--cream);
-    padding:9px 10px;border-radius:var(--radius);font-size:14px;margin-bottom:2px;cursor:pointer;}
-  .tab-btn:hover{background:var(--surface-2);}
-  .tab-btn.active{background:var(--gold);color:#1A160E;font-weight:600;}
-  .sidebar .signout{margin-top:24px;font-size:12px;color:var(--muted);cursor:pointer;text-decoration:underline;}
+  .sidebar{width:230px;flex-shrink:0;margin:16px 0 16px 16px;padding:22px 16px;height:calc(100vh - 32px);position:sticky;top:16px;display:flex;flex-direction:column;}
+  body[dir='rtl'] .sidebar{margin:16px 16px 16px 0;}
+  .sidebar .brand{font-size:17px;color:var(--ink);margin-bottom:2px;}
+  .sidebar .who{font-size:12px;color:var(--muted);margin-bottom:20px;}
+  .lang-switch{display:flex;gap:6px;margin-bottom:18px;}
+  .lang-switch button{flex:1;padding:7px 8px;font-size:12px;background:rgba(255,255,255,.5);color:var(--muted);border:1px solid var(--border-soft);}
+  .lang-switch button.active{background:var(--gold);color:#fff;border-color:var(--gold);}
+  #tab-list{flex:1;overflow-y:auto;}
+  .tab-btn{display:block;width:100%;text-align:inherit;background:none;border:none;color:var(--ink);
+    padding:10px 12px;border-radius:var(--radius-xs);font-size:14px;margin-bottom:3px;cursor:pointer;}
+  .tab-btn:hover{background:rgba(255,255,255,.6);}
+  .tab-btn.active{background:var(--gold);color:#fff;font-weight:600;}
+  .sidebar .signout{margin-top:16px;font-size:13px;color:var(--muted);cursor:pointer;text-align:center;padding:8px;border-radius:var(--radius-xs);}
+  .sidebar .signout:hover{background:rgba(255,255,255,.6);}
 
-  .main{flex:1;padding:32px 40px;max-width:1100px;}
-  .main h2{font-size:22px;margin-bottom:4px;}
-  .subhead{color:var(--muted);font-size:13px;margin-bottom:24px;}
+  .main{flex:1;padding:32px 36px;max-width:1120px;}
+  .main h2{font-size:23px;}
+  .subhead{color:var(--muted);font-size:13px;margin:4px 0 22px;}
 
   .range-row{display:flex;gap:8px;align-items:end;margin-bottom:20px;flex-wrap:wrap;}
-  .range-row button.chip{background:var(--surface-2);color:var(--cream);border:1px solid var(--line);
-    padding:7px 12px;font-size:13px;font-weight:500;}
-  .range-row button.chip.active{background:var(--gold);color:#1A160E;border-color:var(--gold);}
+  .range-row button.chip{background:rgba(255,255,255,.55);color:var(--ink);border:1px solid var(--border-soft);
+    padding:8px 14px;font-size:13px;font-weight:500;border-radius:999px;}
+  .range-row button.chip.active{background:var(--gold);color:#fff;border-color:var(--gold);}
   .range-row input[type=date]{margin-bottom:0;width:auto;}
 
-  .summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:32px;}
-  .summary-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px;}
-  .summary-card .type{font-size:12px;color:var(--muted);margin-bottom:8px;}
-  .summary-card .kg{font-size:20px;font-weight:600;}
-  .summary-card .amt{font-size:13px;color:var(--silver);margin-top:2px;}
+  .way-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;}
+  .way-card{padding:20px;}
+  .way-card h3{font-size:14px;color:var(--ink);margin-bottom:14px;}
+  .way-card .rows{display:flex;flex-direction:column;gap:10px;}
+  .way-card .leg{display:flex;justify-content:space-between;align-items:baseline;padding:10px 12px;background:rgba(255,255,255,.5);border-radius:var(--radius-xs);}
+  .way-card .leg .label{font-size:12px;color:var(--muted);}
+  .way-card .leg .val{font-size:16px;font-weight:700;}
+  .way-card .leg .amt{font-size:12px;color:var(--muted-2);display:block;text-align:end;}
 
-  .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:24px;margin-bottom:24px;}
+  .panel{padding:24px;margin-bottom:20px;}
   .panel h3{font-size:15px;margin-bottom:16px;}
   .form-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:0 16px;}
   .form-grid .full{grid-column:1/-1;}
-  .computed-row{display:flex;gap:24px;padding:12px 0;margin:4px 0 16px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);flex-wrap:wrap;}
-  .computed-row div{font-size:13px;color:var(--muted);}
-  .computed-row span{display:block;color:var(--cream);font-size:15px;margin-top:2px;}
-  .margin-pill{display:inline-block;padding:2px 8px;border-radius:var(--radius);font-size:14px;}
+  .computed-row{display:flex;gap:22px;padding:14px 0;margin:4px 0 18px;border-top:1px solid var(--border-soft);border-bottom:1px solid var(--border-soft);flex-wrap:wrap;}
+  .computed-row div{font-size:12px;color:var(--muted);}
+  .computed-row span{display:block;color:var(--ink);font-size:15px;margin-top:2px;font-weight:600;}
+  .margin-pill{display:inline-block;padding:3px 10px;border-radius:999px;font-size:13px;font-weight:600;}
   .margin-pos{background:var(--green-bg);color:var(--green-fg);}
   .margin-neg{background:var(--red-bg);color:var(--red-fg);}
 
-  table{width:100%;border-collapse:collapse;font-size:13px;}
-  th{text-align:left;color:var(--muted);font-weight:500;padding:8px;border-bottom:1px solid var(--line);white-space:nowrap;}
-  td{padding:8px;border-bottom:1px solid var(--line);white-space:nowrap;}
-  tr:hover td{background:var(--surface-2);}
-  .row-actions button{margin-right:6px;}
-  .empty{color:var(--muted);font-size:13px;padding:20px 0;text-align:center;}
+  .export-row{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
 
-  /* ---- Polish ---- */
-  .login-card{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:32px;box-shadow:0 8px 24px rgba(0,0,0,.35);}
-  .panel,.summary-card{box-shadow:0 1px 3px rgba(0,0,0,.25);}
-  .panel{border-radius:6px;}
-  .summary-card{border-radius:6px;transition:border-color .15s;}
-  .summary-card:hover{border-color:var(--gold-soft);}
-  button{transition:background .15s, border-color .15s;}
-  input:hover,select:hover{border-color:var(--gold-soft);}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th{text-align:inherit;color:var(--muted);font-weight:600;padding:9px 10px;border-bottom:1px solid var(--border-soft);white-space:nowrap;}
+  td{padding:9px 10px;border-bottom:1px solid var(--border-soft);white-space:nowrap;}
+  tr:hover td{background:rgba(255,255,255,.5);}
+  .row-actions button{margin-inline-end:6px;}
+  .empty{color:var(--muted);font-size:13px;padding:24px 0;text-align:center;}
   #table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
   table{min-width:760px;}
-  .tab-btn,button{min-height:38px;}
-  button:focus-visible,input:focus-visible,select:focus-visible,.tab-btn:focus-visible{outline:2px solid var(--gold);outline-offset:1px;}
 
-  /* ---- Responsive ---- */
   @media (max-width: 880px){
     #app.active{flex-direction:column;}
     .sidebar{
-      width:100%;box-sizing:border-box;border-right:none;border-bottom:1px solid var(--line);
-      display:flex;align-items:center;gap:16px;padding:14px 16px;flex-wrap:nowrap;overflow-x:auto;
+      width:auto;margin:12px;height:auto;position:static;padding:14px 16px;
+      display:flex;flex-direction:row;align-items:center;gap:14px;overflow-x:auto;
     }
-    body[dir='rtl'] .sidebar{border-left:none;border-bottom:1px solid var(--line);}
-    .sidebar .brand{margin:0;white-space:nowrap;font-size:16px;}
+    .sidebar .brand{white-space:nowrap;font-size:15px;margin:0;}
     .sidebar .who{display:none;}
     .lang-switch{margin:0;flex-shrink:0;}
-    .lang-switch button{padding:6px 10px;}
     #tab-list{display:flex;gap:6px;flex:1;overflow-x:auto;}
     .tab-btn{white-space:nowrap;flex-shrink:0;}
     .sidebar .signout{margin:0;white-space:nowrap;flex-shrink:0;}
     .main{padding:16px;}
-    .main h2{font-size:19px;}
+    .way-grid{grid-template-columns:1fr;}
     .form-grid{grid-template-columns:repeat(2,1fr);}
-    .summary-grid{grid-template-columns:repeat(2,1fr);}
-    .computed-row{gap:16px;}
     .panel{padding:16px;}
-    .range-row{gap:6px;}
-    .range-row input[type=date]{flex:1;min-width:130px;}
+    table{font-size:12px;min-width:640px;}
   }
   @media (max-width: 520px){
     .form-grid{grid-template-columns:1fr;}
-    .summary-grid{grid-template-columns:1fr 1fr;}
     .login-card{padding:24px;}
-    table{min-width:640px;font-size:12px;}
   }
 </style>
 </head>
@@ -151,25 +164,44 @@
 
 <!-- ============ LOGIN ============ -->
 <div id="login-screen">
-  <div class="login-card">
+  <div class="login-card glass">
     <h1 data-i18n="brand">Suly / Buzan Ledger</h1>
     <p data-i18n="loginSub">Sign in to record and review transactions.</p>
     <div id="login-error" class="error" style="display:none;"></div>
-    <label for="lu" data-i18n="username">Username</label>
-    <input id="lu" type="text" autocomplete="username">
-    <label for="lp" data-i18n="password">Password</label>
-    <input id="lp" type="password" autocomplete="current-password">
-    <button onclick="doLogin()" style="width:100%;" data-i18n="signIn">Sign in</button>
+    <div id="login-form">
+      <label for="lu" data-i18n="username">Username</label>
+      <input id="lu" type="text" autocomplete="username">
+      <label for="lp" data-i18n="password">Password</label>
+      <input id="lp" type="password" autocomplete="current-password">
+      <button onclick="doLogin()" style="width:100%;" data-i18n="signIn">Sign in</button>
+      <div style="text-align:center;margin-top:16px;">
+        <button class="link-btn" id="show-setup-link" style="display:none;" onclick="toggleSetup(true)" data-i18n="firstTimeLink">First time? Create the admin account</button>
+      </div>
+    </div>
+    <div id="setup-form" style="display:none;">
+      <label for="su" data-i18n="username">Username</label>
+      <input id="su" type="text" autocomplete="off">
+      <label for="sn" data-i18n="fullName">Full name</label>
+      <input id="sn" type="text" autocomplete="off">
+      <label for="sp" data-i18n="password">Password</label>
+      <input id="sp" type="password" autocomplete="new-password">
+      <div class="hint" data-i18n="setupHint">This creates the one and only admin account — do this once.</div>
+      <button onclick="createFirstAdmin()" style="width:100%;" data-i18n="createAdmin">Create admin account</button>
+      <div style="text-align:center;margin-top:16px;">
+        <button class="link-btn" onclick="toggleSetup(false)" data-i18n="backToLogin">Back to sign in</button>
+      </div>
+    </div>
   </div>
 </div>
 
 <!-- ============ APP ============ -->
 <div id="app">
-  <div class="sidebar">
+  <div class="sidebar glass">
     <div class="brand" data-i18n="brand">Suly / Buzan</div>
     <div class="who" id="who"></div>
-    <div id="tab-list"></div>
     <div class="lang-switch"><button id="lang-en" onclick="setLang('en')">English</button><button id="lang-ckb" onclick="setLang('ckb')">کوردی</button></div>
+    <div id="tab-list"></div>
+    <div id="add-employee-link" style="display:none;"><button class="ghost" style="width:100%;margin-bottom:10px;" onclick="openAddEmployee()" data-i18n="addEmployee">+ Add employee</button></div>
     <div class="signout" onclick="signOut()" data-i18n="signOut">Sign out</div>
   </div>
 
@@ -186,10 +218,10 @@
       <div><label style="margin-bottom:4px;" data-i18n="to">To</label><input type="date" id="range-to" onchange="setRange('custom')"></div>
     </div>
 
-    <div class="summary-grid" id="summary-grid"></div>
-    <div class="panel" id="balance-panel"></div>
+    <div class="way-grid" id="way-grid"></div>
+    <div class="panel glass" id="balance-panel"></div>
 
-    <div class="panel" id="entry-panel" style="display:none;">
+    <div class="panel glass" id="entry-panel" style="display:none;">
       <h3 id="form-title" data-i18n="addTransaction">Add transaction</h3>
       <input type="hidden" id="edit-id">
       <div class="form-grid">
@@ -213,22 +245,67 @@
         <div data-i18n="total">Total<span class="num" id="c-total">$0.00</span></div>
       </div>
       <button onclick="submitRecord()" data-i18n="saveTransaction">Save transaction</button>
-      <button class="secondary" id="cancel-edit" style="display:none;margin-left:8px;" onclick="resetForm()" data-i18n="cancelEdit">Cancel edit</button>
+      <button class="secondary" id="cancel-edit" style="display:none;margin-inline-start:8px;" onclick="resetForm()" data-i18n="cancelEdit">Cancel edit</button>
     </div>
 
-    <div class="panel">
+    <div class="panel glass">
       <h3 data-i18n="transactions">Transactions</h3>
+      <div class="export-row" id="export-row" style="display:none;">
+        <button class="secondary" onclick="exportXlsx()" data-i18n="downloadXlsx">⬇ Download XLSX</button>
+        <button class="secondary" onclick="exportPdf()" data-i18n="downloadPdf">⬇ Download PDF</button>
+      </div>
       <div id="table-wrap"><div class="empty">Loading…</div></div>
     </div>
   </div>
 </div>
 
+<!-- ============ ADD EMPLOYEE MODAL ============ -->
+<div id="add-employee-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:50;align-items:center;justify-content:center;padding:20px;">
+  <div class="glass" style="max-width:380px;width:100%;padding:28px;">
+    <h3 style="margin-bottom:16px;" data-i18n="addEmployee">+ Add employee</h3>
+    <label data-i18n="username">Username</label><input id="ne-username" type="text">
+    <label data-i18n="fullName">Full name</label><input id="ne-fullname" type="text">
+    <label data-i18n="password">Password</label><input id="ne-password" type="text">
+    <div id="ne-error" class="error" style="display:none;"></div>
+    <button onclick="submitNewEmployee()" data-i18n="save">Save</button>
+    <button class="secondary" style="margin-inline-start:8px;" onclick="closeAddEmployee()" data-i18n="cancel">Cancel</button>
+  </div>
+</div>
+
 <script>
+/* ====================================================================
+   FIREBASE CONFIG — paste your project's config object here.
+   Firebase Console → Project settings → General → Your apps → SDK setup.
+   ==================================================================== */
+const firebaseConfig = {
+  apiKey: "AIzaSyC5yab_KHtWM6awr7kuapSlz7SIeBjERlE",
+  authDomain: "suly-buzan-ledger.firebaseapp.com",
+  projectId: "suly-buzan-ledger",
+  storageBucket: "suly-buzan-ledger.firebasestorage.app",
+  messagingSenderId: "477670457012",
+  appId: "1:477670457012:web:3561167783fc27d4eee1e1"
+};
+const AUTH_EMAIL_DOMAIN = 'ledger.local'; // usernames become username@ledger.local internally — not a real mailbox
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+function toEmail(username){ return String(username).trim().toLowerCase().replace(/\s+/g,'') + '@' + AUTH_EMAIL_DOMAIN; }
+
+const OUNCE_DIVISOR = 155.52;
+const TROY_OUNCE_GRAMS = 31.103479;
+const WAY1 = 'Sell Suly / Buy Buzan';
+const WAY2 = 'Buy Suly / Sell Buzan';
+
 /* ====== I18N ====== */
 const I18N = {
   en: {
     brand: 'Suly / Buzan Ledger', loginSub: 'Sign in to record and review transactions.',
     username: 'Username', password: 'Password', signIn: 'Sign in', signOut: 'Sign out',
+    fullName: 'Full name', firstTimeLink: 'First time? Create the admin account',
+    setupHint: 'This creates the one and only admin account — do this once.',
+    createAdmin: 'Create admin account', backToLogin: 'Back to sign in',
     today: 'Today', thisWeek: 'This week', thisMonth: 'This month', allTime: 'All time',
     from: 'From', to: 'To', addTransaction: 'Add transaction', editTransaction: 'Edit transaction',
     date: 'Date', type: 'Type', way1: 'Sell Suly / Buy Buzan', way2: 'Buy Suly / Sell Buzan',
@@ -237,21 +314,27 @@ const I18N = {
     saveTransaction: 'Save transaction', cancelEdit: 'Cancel edit', transactions: 'Transactions',
     allEmployees: 'All employees', viewOnlySub: 'View-only — ask the admin to add or change transactions.',
     editableSub: 'Add, edit, or review transactions for this tab.', combinedTitle: 'All employees — combined view',
-    combinedSub: 'Read-only combined summary across every tab.', selectEmployee: 'Select an individual employee tab to see line-by-line transactions.',
+    combinedSub: 'Read-only combined summary across everyone.', selectEmployee: 'Select an individual employee to see line-by-line transactions and export files.',
     noTransactions: 'No transactions in this range.', loading: 'Loading…',
-    sulyBought: 'Suly bought', sulySold: 'Suly sold', buzanBought: 'Buzan bought', buzanSold: 'Buzan sold',
+    way1Title: 'Sell Suly / Buy Buzan', way2Title: 'Buy Suly / Sell Buzan',
+    sulySold: 'Suly sold', buzanBought: 'Buzan bought', sulyBought: 'Suly bought', buzanSold: 'Buzan sold',
     balanceTitle: 'Balance & income for this range', sulyLeft: 'Suly left to sell', buzanLeft: 'Buzan left to sell',
     totalBought: 'Total bought', totalSold: 'Total sold', income: 'Income', incomePerKg: 'Income per KG',
     avgMargin: 'Average margin', txnCount: 'Transactions', edit: 'Edit', delete: 'Delete',
     fillRequired: 'Fill in date, KG, rate, and price.', confirmDelete: 'Delete this transaction? This cannot be undone.',
     couldNotSave: 'Could not save.', couldNotDelete: 'Could not delete.', enterCreds: 'Enter username and password.',
-    invalidLogin: 'Invalid login.', couldNotReach: 'Could not reach the server. Check the connection.',
+    invalidLogin: 'Invalid username or password.', couldNotReach: 'Could not reach the server. Check the connection.',
     colType: 'Type', colKg: 'KG', colCustomer: 'Customer', colRate: 'Rate', colPrice: 'Price/KG',
-    colOunce: 'Ounce', colMarket: 'Market $', colMargin: 'Margin', colTotal: 'Total'
+    colOunce: 'Ounce', colMarket: 'Market $', colMargin: 'Margin', colTotal: 'Total',
+    addEmployee: '+ Add employee', save: 'Save', cancel: 'Cancel', fillAllFields: 'Fill in all fields.',
+    downloadXlsx: '⬇ Download XLSX', downloadPdf: '⬇ Download PDF', setupAlreadyDone: 'An admin account already exists — sign in instead.'
   },
   ckb: {
     brand: 'تۆمارنامەی سولی / بوزان', loginSub: 'بچۆ ژوورەوە بۆ تۆمارکردن و پێداچوونەوەی مامەڵەکان.',
     username: 'ناوی بەکارهێنەر', password: 'وشەی نهێنی', signIn: 'چوونەژوورەوە', signOut: 'چوونەدەرەوە',
+    fullName: 'ناوی تەواو', firstTimeLink: 'یەکەم جارە؟ هەژماری بەڕێوەبەر دروستبکە',
+    setupHint: 'ئەمە تەنها و تاکە هەژماری بەڕێوەبەر دروستدەکات — یەک جار ئەمە بکە.',
+    createAdmin: 'دروستکردنی هەژماری بەڕێوەبەر', backToLogin: 'گەڕانەوە بۆ چوونەژوورەوە',
     today: 'ئەمڕۆ', thisWeek: 'ئەم هەفتەیە', thisMonth: 'ئەم مانگە', allTime: 'هەموو کات',
     from: 'لە', to: 'بۆ', addTransaction: 'زیادکردنی مامەڵە', editTransaction: 'دەستکاریکردنی مامەڵە',
     date: 'بەروار', type: 'جۆر', way1: 'فرۆشتنی سولی / کڕینی بوزان', way2: 'کڕینی سولی / فرۆشتنی بوزان',
@@ -260,66 +343,56 @@ const I18N = {
     saveTransaction: 'پاشەکەوتکردنی مامەڵە', cancelEdit: 'هەڵوەشاندنەوەی دەستکاری', transactions: 'مامەڵەکان',
     allEmployees: 'هەموو کارمەندەکان', viewOnlySub: 'تەنها بۆ بینین — داوا لە بەڕێوەبەر بکە بۆ زیادکردن یان گۆڕینی مامەڵەکان.',
     editableSub: 'زیادکردن، دەستکاریکردن، یان پێداچوونەوەی مامەڵەکان بۆ ئەم لاپەڕەیە.', combinedTitle: 'هەموو کارمەندەکان — بینینی گشتی',
-    combinedSub: 'کورتەیەکی گشتیی تەنها بۆ بینین، بۆ هەموو لاپەڕەکان.', selectEmployee: 'یەک کارمەند هەڵبژێرە بۆ بینینی مامەڵەکان بە ڕیز.',
+    combinedSub: 'کورتەیەکی گشتیی تەنها بۆ بینین، بۆ هەموو کەسێک.', selectEmployee: 'یەک کارمەند هەڵبژێرە بۆ بینینی مامەڵەکان و داگرتنی فایلەکان.',
     noTransactions: 'هیچ مامەڵەیەک لەم ماوەیەدا نییە.', loading: 'بارکردن...',
-    sulyBought: 'سولی کڕدراو', sulySold: 'سولی فرۆشراو', buzanBought: 'بوزان کڕدراو', buzanSold: 'بوزان فرۆشراو',
+    way1Title: 'فرۆشتنی سولی / کڕینی بوزان', way2Title: 'کڕینی سولی / فرۆشتنی بوزان',
+    sulySold: 'سولی فرۆشراو', buzanBought: 'بوزان کڕدراو', sulyBought: 'سولی کڕدراو', buzanSold: 'بوزان فرۆشراو',
     balanceTitle: 'باڵانس و داهات بۆ ئەم ماوەیە', sulyLeft: 'سولی ماوە بۆ فرۆشتن', buzanLeft: 'بوزان ماوە بۆ فرۆشتن',
     totalBought: 'کۆی کڕین', totalSold: 'کۆی فرۆشتن', income: 'داهات', incomePerKg: 'داهات بۆ هەر کیلۆیەک',
     avgMargin: 'تێکڕای قازانج', txnCount: 'ژمارەی مامەڵەکان', edit: 'دەستکاری', delete: 'سڕینەوە',
     fillRequired: 'بەروار، کیلۆگرام، نرخ، و بەها پڕبکەرەوە.', confirmDelete: 'ئەم مامەڵەیە بسڕدرێتەوە؟ ناتوانرێت هەڵبوەشێندرێتەوە.',
     couldNotSave: 'نەتوانرا پاشەکەوت بکرێت.', couldNotDelete: 'نەتوانرا بسڕدرێتەوە.', enterCreds: 'ناوی بەکارهێنەر و وشەی نهێنی بنووسە.',
-    invalidLogin: 'چوونەژوورەوە هەڵەیە.', couldNotReach: 'نەتوانرا پەیوەندی بە سێرڤەرەوە بکرێت. پەیوەندییەکەت بپشکنە.',
+    invalidLogin: 'ناوی بەکارهێنەر یان وشەی نهێنی هەڵەیە.', couldNotReach: 'نەتوانرا پەیوەندی بکرێت. تکایە پەیوەندییەکەت بپشکنە.',
     colType: 'جۆر', colKg: 'کیلۆ', colCustomer: 'کڕیار', colRate: 'نرخ', colPrice: 'نرخ/کیلۆ',
-    colOunce: 'ئۆنس', colMarket: 'نرخی بازاڕ', colMargin: 'جیاوازی', colTotal: 'کۆی گشتی'
+    colOunce: 'ئۆنس', colMarket: 'نرخی بازاڕ', colMargin: 'جیاوازی', colTotal: 'کۆی گشتی',
+    addEmployee: '+ زیادکردنی کارمەند', save: 'پاشەکەوتکردن', cancel: 'هەڵوەشاندنەوە', fillAllFields: 'هەموو خانەکان پڕبکەرەوە.',
+    downloadXlsx: '⬇ داگرتنی XLSX', downloadPdf: '⬇ داگرتنی PDF', setupAlreadyDone: 'هەژماری بەڕێوەبەر پێشتر دروستکراوە — بچۆ ژوورەوە.'
   }
 };
 let LANG = localStorage.getItem('sbl_lang') || 'en';
 function t(key){ return (I18N[LANG] && I18N[LANG][key]) || I18N.en[key] || key; }
 
-function setLang(lang){
-  LANG = lang;
-  localStorage.setItem('sbl_lang', lang);
-  document.body.setAttribute('dir', lang === 'ckb' ? 'rtl' : 'ltr');
-  document.getElementById('lang-en').classList.toggle('active', lang === 'en');
-  document.getElementById('lang-ckb').classList.toggle('active', lang === 'ckb');
+function applyStaticTranslations(){
+  document.body.setAttribute('dir', LANG === 'ckb' ? 'rtl' : 'ltr');
+  document.getElementById('lang-en').classList.toggle('active', LANG === 'en');
+  document.getElementById('lang-ckb').classList.toggle('active', LANG === 'ckb');
   document.querySelectorAll('[data-i18n]').forEach(el => {
     const key = el.getAttribute('data-i18n');
-    // preserve any nested elements (like the computed-row <span>) inside labels
     const nested = el.querySelector('span');
     el.textContent = t(key);
     if(nested) el.appendChild(nested);
   });
+}
+function setLang(lang){
+  LANG = lang; localStorage.setItem('sbl_lang', lang);
+  applyStaticTranslations();
   if(session){
     document.getElementById('viewing-sub').textContent = viewingTab === 'ALL' ? t('combinedSub') :
       (session.role === 'admin' ? t('editableSub') : t('viewOnlySub'));
     if(viewingTab === 'ALL') document.getElementById('viewing-title').textContent = t('combinedTitle');
     buildSidebar();
-    loadData();
+    renderAll();
   }
 }
 
-/* ====== CONFIG ====== */
-const API_URL = 'https://script.google.com/macros/s/AKfycbx7xfIeFkzMkJVJd6mWX5sqAnRcW54aHefvqsW-5Gz6MOyposn9SHJbslNha2s8KIaw/exec';
-
 /* ====== STATE ====== */
-let session = null;      // {username, password, role, tabName, fullName}
-let viewingTab = null;   // which tab is currently displayed
+let session = null;
+let viewingTab = null;
 let employees = [];
-let currentRange = 'today';
 let currentRecords = [];
+let unsubscribe = null;
 
-/* ====== API ====== */
-async function api(action, payload) {
-  const res = await fetch(API_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // avoids CORS preflight on Apps Script
-    body: JSON.stringify(Object.assign({ action, username: session ? session.username : payload.username,
-      password: session ? session.password : payload.password }, payload))
-  });
-  return res.json();
-}
-
-/* ====== LOGIN ====== */
+/* ====== AUTH ====== */
 async function doLogin(){
   const username = document.getElementById('lu').value.trim();
   const password = document.getElementById('lp').value;
@@ -327,29 +400,95 @@ async function doLogin(){
   errEl.style.display = 'none';
   if(!username || !password){ errEl.textContent = t('enterCreds'); errEl.style.display='block'; return; }
   try{
-    const r = await api('login', { username, password });
-    if(!r.ok){ errEl.textContent = r.error || t('invalidLogin'); errEl.style.display='block'; return; }
-    session = { username, password, role: r.role, tabName: r.tabName, fullName: r.fullName };
-    if(r.employees) employees = r.employees;
-    localStorage.setItem('sbl_session', JSON.stringify(session));
+    const cred = await auth.signInWithEmailAndPassword(toEmail(username), password);
+    const doc = await db.collection('employees').doc(cred.user.uid).get();
+    if(!doc.exists){ errEl.textContent = t('invalidLogin'); errEl.style.display='block'; await auth.signOut(); return; }
+    const d = doc.data();
+    session = { uid: cred.user.uid, fullName: d.fullName, role: d.role, tabName: d.tabName };
     enterApp();
   }catch(e){
-    errEl.textContent = t('couldNotReach');
-    errEl.style.display = 'block';
+    errEl.textContent = t('invalidLogin'); errEl.style.display = 'block';
   }
 }
 
 function signOut(){
+  if(unsubscribe){ unsubscribe(); unsubscribe = null; }
+  auth.signOut();
   session = null;
-  localStorage.removeItem('sbl_session');
   document.getElementById('app').classList.remove('active');
   document.getElementById('login-screen').style.display = 'flex';
 }
 
+function toggleSetup(show){
+  document.getElementById('login-form').style.display = show ? 'none' : 'block';
+  document.getElementById('setup-form').style.display = show ? 'block' : 'none';
+}
+
+async function checkFirstRunSetup(){
+  try{
+    const setupDoc = await db.collection('meta').doc('setup').get();
+    document.getElementById('show-setup-link').style.display = setupDoc.exists ? 'none' : 'inline';
+  }catch(e){ /* ignore — if rules aren't deployed yet this just stays hidden */ }
+}
+
+async function createFirstAdmin(){
+  const username = document.getElementById('su').value.trim();
+  const fullName = document.getElementById('sn').value.trim();
+  const password = document.getElementById('sp').value;
+  const errEl = document.getElementById('login-error');
+  errEl.style.display = 'none';
+  if(!username || !fullName || !password){ errEl.textContent = t('fillAllFields'); errEl.style.display='block'; return; }
+  try{
+    const setupDoc = await db.collection('meta').doc('setup').get();
+    if(setupDoc.exists){ errEl.textContent = t('setupAlreadyDone'); errEl.style.display='block'; return; }
+    const cred = await auth.createUserWithEmailAndPassword(toEmail(username), password);
+    await db.collection('employees').doc(cred.user.uid).set({ username, fullName, role: 'admin', tabName: 'Admin' });
+    await db.collection('meta').doc('setup').set({ adminCreated: true });
+    session = { uid: cred.user.uid, fullName, role: 'admin', tabName: 'Admin' };
+    enterApp();
+  }catch(e){
+    errEl.textContent = String(e.message || e); errEl.style.display = 'block';
+  }
+}
+
+/* ---- Secondary app instance so adding an employee doesn't sign the admin out ---- */
+async function submitNewEmployee(){
+  const username = document.getElementById('ne-username').value.trim();
+  const fullName = document.getElementById('ne-fullname').value.trim();
+  const password = document.getElementById('ne-password').value;
+  const errEl = document.getElementById('ne-error');
+  errEl.style.display = 'none';
+  if(!username || !fullName || !password){ errEl.textContent = t('fillAllFields'); errEl.style.display='block'; return; }
+
+  const secondary = firebase.initializeApp(firebaseConfig, 'secondary-' + Date.now());
+  try{
+    const cred = await secondary.auth().createUserWithEmailAndPassword(toEmail(username), password);
+    await db.collection('employees').doc(cred.user.uid).set({ username, fullName, role: 'employee', tabName: fullName });
+    await secondary.auth().signOut();
+    await secondary.delete();
+    closeAddEmployee();
+    employees = [];
+    await buildSidebar();
+  }catch(e){
+    errEl.textContent = String(e.message || e); errEl.style.display = 'block';
+    try{ await secondary.delete(); }catch(_){}
+  }
+}
+function openAddEmployee(){
+  document.getElementById('ne-username').value = '';
+  document.getElementById('ne-fullname').value = '';
+  document.getElementById('ne-password').value = '';
+  document.getElementById('ne-error').style.display = 'none';
+  document.getElementById('add-employee-modal').style.display = 'flex';
+}
+function closeAddEmployee(){ document.getElementById('add-employee-modal').style.display = 'none'; }
+
+/* ====== APP SHELL ====== */
 async function enterApp(){
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app').classList.add('active');
   document.getElementById('who').textContent = session.fullName + ' · ' + session.role;
+  document.getElementById('add-employee-link').style.display = session.role === 'admin' ? 'block' : 'none';
   viewingTab = session.tabName;
   document.getElementById('entry-panel').style.display = (session.role === 'admin') ? 'block' : 'none';
   document.getElementById('viewing-title').textContent = viewingTab;
@@ -364,19 +503,19 @@ async function buildSidebar(){
   list.innerHTML = '';
   if(session.role === 'admin'){
     if(!employees.length){
-      const r = await api('listEmployees', {});
-      employees = r.ok ? r.employees : [];
+      const snap = await db.collection('employees').get();
+      employees = snap.docs.map(d => d.data());
     }
     const allBtn = document.createElement('button');
     allBtn.className = 'tab-btn' + (viewingTab==='ALL' ? ' active' : '');
     allBtn.textContent = t('allEmployees');
-    allBtn.onclick = () => switchTab('ALL');
+    allBtn.onclick = (ev) => switchTab('ALL', ev.target);
     list.appendChild(allBtn);
     employees.forEach(emp => {
       const b = document.createElement('button');
       b.className = 'tab-btn' + (viewingTab===emp.tabName ? ' active' : '');
-      b.textContent = emp.fullName + ' (' + emp.tabName + ')';
-      b.onclick = () => switchTab(emp.tabName);
+      b.textContent = emp.fullName;
+      b.onclick = (ev) => switchTab(emp.tabName, ev.target);
       list.appendChild(b);
     });
   } else {
@@ -387,35 +526,32 @@ async function buildSidebar(){
   }
 }
 
-function switchTab(tabName){
+function switchTab(tabName, btnEl){
   viewingTab = tabName;
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-  event.target.classList.add('active');
+  if(btnEl) btnEl.classList.add('active');
   const canEdit = (tabName !== 'ALL') && session.role === 'admin';
   document.getElementById('entry-panel').style.display = canEdit ? 'block' : 'none';
   document.getElementById('viewing-title').textContent = tabName === 'ALL' ? t('combinedTitle') : tabName;
-  document.getElementById('viewing-sub').textContent = tabName === 'ALL' ? t('combinedSub') : t('editableSub');
+  document.getElementById('viewing-sub').textContent = tabName === 'ALL' ? t('combinedSub') : (session.role === 'admin' ? t('editableSub') : t('viewOnlySub'));
   loadData();
 }
 
 /* ====== DATE RANGE ====== */
+let currentRange = 'today';
 function setRange(mode){
   currentRange = mode;
   document.querySelectorAll('.range-row .chip').forEach(b=>b.classList.remove('active'));
   const now = new Date();
   let from = null, to = null;
-  if(mode === 'today'){
-    from = to = ymd(now);
-  } else if(mode === 'week'){
+  if(mode === 'today'){ from = to = ymd(now); }
+  else if(mode === 'week'){
     const day = now.getDay();
     const monday = new Date(now); monday.setDate(now.getDate() - ((day+6)%7));
     from = ymd(monday); to = ymd(now);
   } else if(mode === 'month'){
-    from = ymd(new Date(now.getFullYear(), now.getMonth(), 1));
-    to = ymd(now);
-  } else if(mode === 'all'){
-    from = ''; to = '';
-  }
+    from = ymd(new Date(now.getFullYear(), now.getMonth(), 1)); to = ymd(now);
+  } else if(mode === 'all'){ from = ''; to = ''; }
   if(mode !== 'custom'){
     document.getElementById('range-from').value = from || '';
     document.getElementById('range-to').value = to || '';
@@ -426,40 +562,79 @@ function setRange(mode){
 }
 function ymd(d){ return d.toISOString().slice(0,10); }
 
-/* ====== DATA LOAD ====== */
-async function loadData(){
+/* ====== LIVE DATA (Firestore listener drives table + both summary panels) ====== */
+function loadData(){
+  if(unsubscribe){ unsubscribe(); unsubscribe = null; }
   const from = document.getElementById('range-from').value;
   const to = document.getElementById('range-to').value;
   document.getElementById('table-wrap').innerHTML = '<div class="empty">'+t('loading')+'</div>';
+  document.getElementById('export-row').style.display = 'none';
 
-  const v = await api('view', { tabName: viewingTab, dateFrom: from, dateTo: to });
-  if(!v.ok){ renderSummary(v); document.getElementById('table-wrap').innerHTML = '<div class="empty">'+t('couldNotReach')+'</div>'; return; }
-  renderSummary(v.summary);
+  let q = db.collection('records');
+  if(viewingTab !== 'ALL') q = q.where('tabName', '==', viewingTab);
+  if(from) q = q.where('date', '>=', from);
+  if(to) q = q.where('date', '<=', to);
 
+  unsubscribe = q.onSnapshot(snap => {
+    currentRecords = snap.docs.map(d => Object.assign({ id: d.id }, d.data()));
+    renderAll();
+  }, err => {
+    document.getElementById('table-wrap').innerHTML = '<div class="empty">'+t('couldNotReach')+'</div>';
+    console.error(err);
+  });
+}
+
+function renderAll(){
+  renderWayCards();
+  renderBalance();
   if(viewingTab === 'ALL'){
     document.getElementById('table-wrap').innerHTML = '<div class="empty">'+t('selectEmployee')+'</div>';
+    document.getElementById('export-row').style.display = 'none';
     return;
   }
-  currentRecords = v.records || [];
+  document.getElementById('export-row').style.display = currentRecords.length ? 'flex' : 'none';
   renderTable();
 }
 
-function renderSummary(r){
-  const grid = document.getElementById('summary-grid');
-  const bal = document.getElementById('balance-panel');
-  if(!r.ok){ grid.innerHTML = ''; bal.innerHTML = '<div class="empty">'+t('couldNotReach')+'</div>'; return; }
+function computeTotals(){
+  const suly = { boughtKg:0, boughtTotal:0, soldKg:0, soldTotal:0 };
+  const buzan = { boughtKg:0, boughtTotal:0, soldKg:0, soldTotal:0 };
+  let totalMargin = 0;
+  currentRecords.forEach(r=>{
+    const kg = Number(r.kg)||0, total = Number(r.total)||0, buzanValue = (Number(r.marketPrice)||0)*kg;
+    if(r.type === WAY1){ suly.soldKg += kg; suly.soldTotal += total; buzan.boughtKg += kg; buzan.boughtTotal += buzanValue; }
+    else if(r.type === WAY2){ suly.boughtKg += kg; suly.boughtTotal += total; buzan.soldKg += kg; buzan.soldTotal += buzanValue; }
+    totalMargin += Number(r.margin)||0;
+  });
+  const totalBuy = suly.boughtTotal + buzan.boughtTotal, totalSell = suly.soldTotal + buzan.soldTotal;
+  const totalKg = currentRecords.reduce((s,r)=>s+(Number(r.kg)||0),0);
+  const income = totalSell - totalBuy;
+  return {
+    suly, buzan, totalBuy, totalSell, income,
+    sulyBalanceKg: suly.boughtKg - suly.soldKg, buzanBalanceKg: buzan.boughtKg - buzan.soldKg,
+    incomePerKg: totalKg ? income/totalKg : 0, avgMargin: currentRecords.length ? totalMargin/currentRecords.length : 0,
+    recordCount: currentRecords.length
+  };
+}
 
-  function card(label, kg, total){
-    return '<div class="summary-card"><div class="type">'+label+'</div>'+
-      '<div class="kg num">'+kg.toFixed(2)+' kg</div>'+
-      '<div class="amt num">$'+Math.round(total).toLocaleString()+'</div></div>';
+function renderWayCards(){
+  const r = computeTotals();
+  const grid = document.getElementById('way-grid');
+  function leg(label, kg, total){
+    return '<div class="leg"><div><div class="label">'+label+'</div><div class="val num">'+kg.toFixed(2)+' kg</div></div><div class="amt num">$'+Math.round(total).toLocaleString()+'</div></div>';
   }
   grid.innerHTML =
-    card(t('sulyBought'), r.suly.boughtKg, r.suly.boughtTotal) +
-    card(t('sulySold'), r.suly.soldKg, r.suly.soldTotal) +
-    card(t('buzanBought'), r.buzan.boughtKg, r.buzan.boughtTotal) +
-    card(t('buzanSold'), r.buzan.soldKg, r.buzan.soldTotal);
+    '<div class="way-card glass"><h3>'+t('way1Title')+'</h3><div class="rows">'+
+      leg(t('sulySold'), r.suly.soldKg, r.suly.soldTotal) + leg(t('buzanBought'), r.buzan.boughtKg, r.buzan.boughtTotal) +
+    '</div></div>'+
+    '<div class="way-card glass"><h3>'+t('way2Title')+'</h3><div class="rows">'+
+      leg(t('sulyBought'), r.suly.boughtKg, r.suly.boughtTotal) + leg(t('buzanSold'), r.buzan.soldKg, r.buzan.soldTotal) +
+    '</div></div>';
+}
 
+function renderBalance(){
+  const r = computeTotals();
+  const bal = document.getElementById('balance-panel');
   const incomeClass = r.income >= 0 ? 'margin-pos' : 'margin-neg';
   bal.innerHTML =
     '<h3>'+t('balanceTitle')+'</h3>'+
@@ -478,41 +653,36 @@ function renderSummary(r){
 function renderTable(){
   const wrap = document.getElementById('table-wrap');
   if(!currentRecords.length){ wrap.innerHTML = '<div class="empty">'+t('noTransactions')+'</div>'; return; }
-
   const canEdit = session.role === 'admin';
   const byDate = {};
-  currentRecords.forEach(r=>{
-    const d = fmtDate(r.Date);
-    if(!byDate[d]) byDate[d] = [];
-    byDate[d].push(r);
-  });
+  currentRecords.forEach(r=>{ const d = r.date; if(!byDate[d]) byDate[d]=[]; byDate[d].push(r); });
   const dates = Object.keys(byDate).sort().reverse();
 
   let html = '';
   dates.forEach(date=>{
     const recs = byDate[date];
-    let dayKg = 0, dayTotal = 0;
-    recs.forEach(r=>{ dayKg += Number(r.KG)||0; dayTotal += Number(r.Total)||0; });
-
+    let dayKg=0, dayTotal=0;
+    recs.forEach(r=>{ dayKg += Number(r.kg)||0; dayTotal += Number(r.total)||0; });
     html += '<h3 style="margin:20px 0 8px;font-size:15px;">'+date+
       '<span style="color:var(--muted);font-weight:400;font-size:13px;"> · '+dayKg.toFixed(2)+' kg · $'+Math.round(dayTotal).toLocaleString()+'</span></h3>';
     html += '<table><thead><tr><th>'+t('colType')+'</th><th>'+t('colKg')+'</th><th>'+t('colCustomer')+'</th><th>'+t('colRate')+'</th><th>'+t('colPrice')+'</th><th>'+t('colOunce')+'</th><th>'+t('colMarket')+'</th><th>'+t('colMargin')+'</th><th>'+t('colTotal')+'</th>'+(canEdit?'<th></th>':'')+'</tr></thead><tbody>';
     recs.forEach(r=>{
-      const marginClass = Number(r.Margin) >= 0 ? 'margin-pos' : 'margin-neg';
+      const marginClass = Number(r.margin) >= 0 ? 'margin-pos' : 'margin-neg';
+      const wayLabel = r.type === WAY1 ? t('way1') : t('way2');
       html += '<tr>'+
-        '<td>'+wayOf(r.Type)+'</td>'+
-        '<td class="num">'+Number(r.KG).toFixed(2)+'</td>'+
-        '<td>'+(r.Customer||'')+'</td>'+
-        '<td class="num">'+Number(r.Rate).toFixed(3)+'</td>'+
-        '<td class="num">$'+Number(r.NegotiatedPrice).toFixed(2)+'</td>'+
-        '<td class="num">'+Number(r.Ounce).toFixed(3)+'</td>'+
-        '<td class="num">$'+Number(r.MarketPrice).toFixed(2)+'</td>'+
-        '<td class="num"><span class="margin-pill '+marginClass+'">$'+Number(r.Margin).toFixed(2)+'</span></td>'+
-        '<td class="num">$'+Math.round(r.Total).toLocaleString()+'</td>';
+        '<td>'+wayLabel+'</td>'+
+        '<td class="num">'+Number(r.kg).toFixed(2)+'</td>'+
+        '<td>'+(r.customer||'')+'</td>'+
+        '<td class="num">'+Number(r.rate).toFixed(3)+'</td>'+
+        '<td class="num">$'+Number(r.negotiatedPrice).toFixed(2)+'</td>'+
+        '<td class="num">'+Number(r.ounce).toFixed(3)+'</td>'+
+        '<td class="num">$'+Number(r.marketPrice).toFixed(2)+'</td>'+
+        '<td class="num"><span class="margin-pill '+marginClass+'">$'+Number(r.margin).toFixed(2)+'</span></td>'+
+        '<td class="num">$'+Math.round(r.total).toLocaleString()+'</td>';
       if(canEdit){
         html += '<td class="row-actions">'+
-          '<button class="secondary" onclick="editRecord(\''+r.ID+'\')">'+t('edit')+'</button>'+
-          '<button class="danger" onclick="removeRecord(\''+r.ID+'\')">'+t('delete')+'</button>'+
+          '<button class="secondary" data-edit-id="'+r.id+'">'+t('edit')+'</button>'+
+          '<button class="danger" data-delete-id="'+r.id+'">'+t('delete')+'</button>'+
         '</td>';
       }
       html += '</tr>';
@@ -521,20 +691,14 @@ function renderTable(){
   });
   wrap.innerHTML = html;
 }
-function fmtDate(d){ return String(d).slice(0,10); }
-function wayOf(t){
-  t = String(t);
-  if(t === 'Sell Suly' || t === 'Buy Buzan' || t === 'Sell Suly / Buy Buzan') return 'Sell Suly / Buy Buzan';
-  return 'Buy Suly / Sell Buzan';
-}
 
-/* ====== FORM / COMPUTED FIELDS ====== */
+/* ====== FORM ====== */
 function updateComputed(){
   const kg = parseFloat(document.getElementById('f-kg').value) || 0;
   const rate = parseFloat(document.getElementById('f-rate').value) || 0;
   const price = parseFloat(document.getElementById('f-price').value) || 0;
-  const ounce = kg / 155.52;
-  const market = (rate / 31.103479) * 1000;
+  const ounce = kg / OUNCE_DIVISOR;
+  const market = (rate / TROY_OUNCE_GRAMS) * 1000;
   const margin = price - market;
   const total = price * kg;
   document.getElementById('c-ounce').textContent = ounce.toFixed(3);
@@ -543,40 +707,42 @@ function updateComputed(){
   const pill = document.querySelector('#c-margin .margin-pill');
   pill.textContent = '$' + margin.toFixed(2);
   pill.className = 'margin-pill ' + (margin >= 0 ? 'margin-pos' : 'margin-neg');
+  return { ounce, market, margin, total };
 }
 
 async function submitRecord(){
   const id = document.getElementById('edit-id').value;
-  const payload = {
-    tabName: viewingTab,
-    date: document.getElementById('f-date').value,
-    type: document.getElementById('f-type').value,
-    kg: document.getElementById('f-kg').value,
-    customer: document.getElementById('f-customer').value,
-    rate: document.getElementById('f-rate').value,
-    negotiatedPrice: document.getElementById('f-price').value,
-    notes: document.getElementById('f-notes').value
+  const kg = parseFloat(document.getElementById('f-kg').value);
+  const rate = parseFloat(document.getElementById('f-rate').value);
+  const negotiatedPrice = parseFloat(document.getElementById('f-price').value);
+  const date = document.getElementById('f-date').value;
+  if(!date || !kg || !rate || !negotiatedPrice){ alert(t('fillRequired')); return; }
+  const c = updateComputed();
+  const data = {
+    tabName: viewingTab, date, type: document.getElementById('f-type').value, kg,
+    customer: document.getElementById('f-customer').value, rate, negotiatedPrice,
+    ounce: c.ounce, marketPrice: c.market, margin: c.margin, total: c.total,
+    notes: document.getElementById('f-notes').value, enteredBy: session.fullName,
+    timestamp: firebase.firestore.FieldValue.serverTimestamp()
   };
-  if(!payload.date || !payload.kg || !payload.rate || !payload.negotiatedPrice){
-    alert(t('fillRequired')); return;
-  }
-  const r = id ? await api('updateRecord', Object.assign({id}, payload)) : await api('addRecord', payload);
-  if(!r.ok){ alert(r.error || t('couldNotSave')); return; }
-  resetForm();
-  loadData();
+  try{
+    if(id) await db.collection('records').doc(id).set(data, { merge: true });
+    else await db.collection('records').add(data);
+    resetForm();
+  }catch(e){ alert(t('couldNotSave') + ' (' + e.message + ')'); }
 }
 
 function editRecord(id){
-  const r = currentRecords.find(x => x.ID === id);
+  const r = currentRecords.find(x => x.id === id);
   if(!r) return;
-  document.getElementById('edit-id').value = r.ID;
-  document.getElementById('f-date').value = fmtDate(r.Date);
-  document.getElementById('f-type').value = wayOf(r.Type);
-  document.getElementById('f-kg').value = r.KG;
-  document.getElementById('f-customer').value = r.Customer;
-  document.getElementById('f-rate').value = r.Rate;
-  document.getElementById('f-price').value = r.NegotiatedPrice;
-  document.getElementById('f-notes').value = r.Notes;
+  document.getElementById('edit-id').value = r.id;
+  document.getElementById('f-date').value = r.date;
+  document.getElementById('f-type').value = r.type;
+  document.getElementById('f-kg').value = r.kg;
+  document.getElementById('f-customer').value = r.customer;
+  document.getElementById('f-rate').value = r.rate;
+  document.getElementById('f-price').value = r.negotiatedPrice;
+  document.getElementById('f-notes').value = r.notes;
   document.getElementById('form-title').textContent = t('editTransaction');
   document.getElementById('cancel-edit').style.display = 'inline-block';
   updateComputed();
@@ -585,9 +751,8 @@ function editRecord(id){
 
 async function removeRecord(id){
   if(!confirm(t('confirmDelete'))) return;
-  const r = await api('deleteRecord', { tabName: viewingTab, id });
-  if(!r.ok){ alert(r.error || t('couldNotDelete')); return; }
-  loadData();
+  try{ await db.collection('records').doc(id).delete(); }
+  catch(e){ alert(t('couldNotDelete') + ' (' + e.message + ')'); }
 }
 
 function resetForm(){
@@ -603,23 +768,54 @@ function resetForm(){
   updateComputed();
 }
 
+/* ====== EXPORT ====== */
+function exportRows(){
+  return currentRecords.slice().sort((a,b)=> a.date < b.date ? 1 : -1).map(r => ({
+    Date: r.date, Type: r.type === WAY1 ? t('way1') : t('way2'), KG: Number(r.kg),
+    Customer: r.customer || '', Rate: Number(r.rate), 'Price/KG': Number(r.negotiatedPrice),
+    Ounce: Number(r.ounce), 'Market $/KG': Number(r.marketPrice), Margin: Number(r.margin), Total: Number(r.total)
+  }));
+}
+function exportXlsx(){
+  const rows = exportRows();
+  if(!rows.length) return;
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, viewingTab.substring(0,31));
+  XLSX.writeFile(wb, viewingTab + '_' + ymd(new Date()) + '.xlsx');
+}
+function exportPdf(){
+  const rows = exportRows();
+  if(!rows.length) return;
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'landscape' });
+  doc.setFontSize(14); doc.text(viewingTab + ' — ' + t('transactions'), 14, 16);
+  const cols = Object.keys(rows[0]);
+  const body = rows.map(r => cols.map(c => String(r[c])));
+  doc.autoTable({ head: [cols], body: body, startY: 22, styles: { fontSize: 8 } });
+  doc.save(viewingTab + '_' + ymd(new Date()) + '.pdf');
+}
+
 /* ====== INIT ====== */
-(function init(){
-  document.body.setAttribute('dir', LANG === 'ckb' ? 'rtl' : 'ltr');
-  document.getElementById('lang-en').classList.toggle('active', LANG === 'en');
-  document.getElementById('lang-ckb').classList.toggle('active', LANG === 'ckb');
-  document.querySelectorAll('[data-i18n]').forEach(el => {
-    const key = el.getAttribute('data-i18n');
-    const nested = el.querySelector('span');
-    el.textContent = t(key);
-    if(nested) el.appendChild(nested);
-  });
-  const saved = localStorage.getItem('sbl_session');
-  if(saved){
-    session = JSON.parse(saved);
-    enterApp();
+document.getElementById('table-wrap').addEventListener('click', (e)=>{
+  const editId = e.target.getAttribute('data-edit-id');
+  const delId = e.target.getAttribute('data-delete-id');
+  if(editId) editRecord(editId);
+  if(delId) removeRecord(delId);
+});
+applyStaticTranslations();
+checkFirstRunSetup();
+auth.onAuthStateChanged(user => {
+  if(user && !session){
+    db.collection('employees').doc(user.uid).get().then(doc=>{
+      if(doc.exists){
+        const d = doc.data();
+        session = { uid: user.uid, fullName: d.fullName, role: d.role, tabName: d.tabName };
+        enterApp();
+      }
+    });
   }
-})();
+});
 </script>
 </body>
 </html>
