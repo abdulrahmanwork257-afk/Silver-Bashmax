@@ -88,6 +88,7 @@
   .lang-switch button{flex:1;padding:7px 8px;font-size:12px;background:rgba(255,255,255,.5);color:var(--muted);border:1px solid var(--border-soft);}
   .lang-switch button.active{background:var(--gold);color:#fff;border-color:var(--gold);}
   #tab-list{flex:1;overflow-y:auto;}
+  #tab-select{display:none;}
   .tab-btn{display:block;width:100%;text-align:inherit;background:none;border:none;color:var(--ink);
     padding:10px 12px;border-radius:var(--radius-xs);font-size:14px;margin-bottom:3px;cursor:pointer;}
   .tab-btn:hover{background:rgba(255,255,255,.6);}
@@ -140,14 +141,20 @@
     #app.active{flex-direction:column;}
     .sidebar{
       width:auto;margin:12px;height:auto;position:static;padding:14px 16px;
-      display:flex;flex-direction:row;align-items:center;gap:14px;overflow-x:auto;
+      display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;gap:10px 14px;
     }
     .sidebar .brand{white-space:nowrap;font-size:15px;margin:0;}
     .sidebar .who{display:none;}
-    .lang-switch{margin:0;flex-shrink:0;}
-    #tab-list{display:flex;gap:6px;flex:1;overflow-x:auto;}
-    .tab-btn{white-space:nowrap;flex-shrink:0;}
-    .sidebar .signout{margin:0;white-space:nowrap;flex-shrink:0;}
+    .lang-switch{margin:0;flex-shrink:0;width:auto;}
+    #tab-list{display:none;}
+    #add-employee-link{order:1;flex-shrink:0;}
+    #add-employee-link button{width:auto;margin:0;}
+    .sidebar .signout{margin:0;white-space:nowrap;flex-shrink:0;order:2;}
+    #tab-select{
+      display:block;order:3;flex-basis:100%;width:100%;margin:0;
+      padding:11px 14px;font-size:14px;font-weight:600;background:var(--gold);color:#fff;
+      border:none;border-radius:999px;-webkit-appearance:none;appearance:none;
+    }
     .main{padding:16px;}
     .way-grid{grid-template-columns:1fr;}
     .form-grid{grid-template-columns:repeat(2,1fr);}
@@ -201,6 +208,7 @@
     <div class="who" id="who"></div>
     <div class="lang-switch"><button id="lang-en" onclick="setLang('en')">English</button><button id="lang-ckb" onclick="setLang('ckb')">کوردی</button></div>
     <div id="tab-list"></div>
+    <select id="tab-select" onchange="switchTab(this.value)"></select>
     <div id="add-employee-link" style="display:none;"><button class="ghost" style="width:100%;margin-bottom:10px;" onclick="openAddEmployee()" data-i18n="addEmployee">+ Add employee</button></div>
     <div class="signout" onclick="signOut()" data-i18n="signOut">Sign out</div>
   </div>
@@ -222,7 +230,10 @@
     <div class="panel glass" id="balance-panel"></div>
 
     <div class="panel glass" id="entry-panel" style="display:none;">
-      <h3 id="form-title" data-i18n="addTransaction">Add transaction</h3>
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
+        <h3 id="form-title" data-i18n="addTransaction" style="margin:0;">Add transaction</h3>
+        <button class="ghost" onclick="openAddKg()" data-i18n="addKgAllowance">+ Add KG allowance</button>
+      </div>
       <input type="hidden" id="edit-id">
       <div class="form-grid">
         <div><label data-i18n="date">Date</label><input type="date" id="f-date"></div>
@@ -260,6 +271,25 @@
   </div>
 </div>
 
+<!-- ============ ADD KG ALLOWANCE MODAL ============ -->
+<div id="add-kg-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:50;align-items:center;justify-content:center;padding:20px;">
+  <div class="glass" style="max-width:380px;width:100%;padding:28px;">
+    <h3 style="margin-bottom:16px;" id="kg-modal-title" data-i18n="addKgAllowance">+ Add KG allowance</h3>
+    <input type="hidden" id="kg-edit-id">
+    <label data-i18n="date">Date</label><input id="kg-date" type="date">
+    <label data-i18n="grantType">Silver type</label>
+    <select id="kg-type">
+      <option value="Suly Allowance" data-i18n="grantSuly">Suly</option>
+      <option value="Buzan Allowance" data-i18n="grantBuzan">Buzan</option>
+    </select>
+    <label data-i18n="kg">KG</label><input id="kg-amount" type="number" step="any">
+    <label data-i18n="notes">Notes</label><input id="kg-notes" type="text">
+    <div id="kg-error" class="error" style="display:none;"></div>
+    <button onclick="submitKgGrant()" data-i18n="save">Save</button>
+    <button class="secondary" style="margin-inline-start:8px;" onclick="closeAddKg()" data-i18n="cancel">Cancel</button>
+  </div>
+</div>
+
 <!-- ============ ADD EMPLOYEE MODAL ============ -->
 <div id="add-employee-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:50;align-items:center;justify-content:center;padding:20px;">
   <div class="glass" style="max-width:380px;width:100%;padding:28px;">
@@ -279,12 +309,12 @@
    Firebase Console → Project settings → General → Your apps → SDK setup.
    ==================================================================== */
 const firebaseConfig = {
-  apiKey: "AIzaSyC5yab_KHtWM6awr7kuapSlz7SIeBjERlE",
-  authDomain: "suly-buzan-ledger.firebaseapp.com",
-  projectId: "suly-buzan-ledger",
-  storageBucket: "suly-buzan-ledger.firebasestorage.app",
-  messagingSenderId: "477670457012",
-  appId: "1:477670457012:web:3561167783fc27d4eee1e1"
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
 };
 const AUTH_EMAIL_DOMAIN = 'ledger.local'; // usernames become username@ledger.local internally — not a real mailbox
 
@@ -298,6 +328,8 @@ const OUNCE_DIVISOR = 155.52;
 const TROY_OUNCE_GRAMS = 31.103479;
 const WAY1 = 'Sell Suly / Buy Buzan';
 const WAY2 = 'Buy Suly / Sell Buzan';
+const GRANT_SULY = 'Suly Allowance';
+const GRANT_BUZAN = 'Buzan Allowance';
 
 /* ====== I18N ====== */
 const I18N = {
@@ -329,6 +361,7 @@ const I18N = {
     colOunce: 'Ounce', colMarket: 'Market $', colMargin: 'Margin', colTotal: 'Total',
     colEnteredBy: 'Entered by', colEmployee: 'Employee', netDiff: 'Net', weightedAvg: 'Weighted avg price',
     plKg: 'P/L × KG', colPlKg: 'P/L × KG', netProfit: 'Net profit (per KG left in shop)',
+    addKgAllowance: '+ Add KG allowance', grantType: 'Silver type', grantSuly: 'Suly', grantBuzan: 'Buzan',
     addEmployee: '+ Add employee', save: 'Save', cancel: 'Cancel', fillAllFields: 'Fill in all fields.',
     downloadXlsx: '⬇ Download XLSX', downloadPdf: '⬇ Download PDF', setupAlreadyDone: 'An admin account already exists — sign in instead.'
   },
@@ -360,6 +393,7 @@ const I18N = {
     colOunce: 'ئۆنس', colMarket: 'نرخی بازاڕ', colMargin: 'جیاوازی', colTotal: 'کۆی گشتی',
     colEnteredBy: 'تۆمارکراو لەلایەن', colEmployee: 'کارمەند', netDiff: 'دەرئەنجام', weightedAvg: 'تێکڕای نرخی باری کێشراو',
     plKg: 'قازانج/زیان × کیلۆ', colPlKg: 'قازانج/زیان × کیلۆ', netProfit: 'قازانجی ڕاستەقینە (بۆ هەر کیلۆی ماوە لە دووکان)',
+    addKgAllowance: '+ زیادکردنی بڕی کیلۆ', grantType: 'جۆری زیو', grantSuly: 'سولی', grantBuzan: 'بوزان',
     addEmployee: '+ زیادکردنی کارمەند', save: 'پاشەکەوتکردن', cancel: 'هەڵوەشاندنەوە', fillAllFields: 'هەموو خانەکان پڕبکەرەوە.',
     downloadXlsx: '⬇ داگرتنی XLSX', downloadPdf: '⬇ داگرتنی PDF', setupAlreadyDone: 'هەژماری بەڕێوەبەر پێشتر دروستکراوە — بچۆ ژوورەوە.'
   }
@@ -479,6 +513,51 @@ async function submitNewEmployee(){
     try{ await secondary.delete(); }catch(_){}
   }
 }
+/* ---- KG allowance (grant) — admin gives an employee free stock to trade, no price involved ---- */
+function openAddKg(){
+  document.getElementById('kg-edit-id').value = '';
+  document.getElementById('kg-modal-title').textContent = t('addKgAllowance');
+  document.getElementById('kg-date').valueAsDate = new Date();
+  document.getElementById('kg-type').value = GRANT_SULY;
+  document.getElementById('kg-amount').value = '';
+  document.getElementById('kg-notes').value = '';
+  document.getElementById('kg-error').style.display = 'none';
+  document.getElementById('add-kg-modal').style.display = 'flex';
+}
+function closeAddKg(){ document.getElementById('add-kg-modal').style.display = 'none'; }
+
+function editKgGrant(r){
+  document.getElementById('kg-edit-id').value = r.id;
+  document.getElementById('kg-modal-title').textContent = t('editTransaction');
+  document.getElementById('kg-date').value = r.date;
+  document.getElementById('kg-type').value = r.type;
+  document.getElementById('kg-amount').value = r.kg;
+  document.getElementById('kg-notes').value = r.notes || '';
+  document.getElementById('kg-error').style.display = 'none';
+  document.getElementById('add-kg-modal').style.display = 'flex';
+}
+
+async function submitKgGrant(){
+  const id = document.getElementById('kg-edit-id').value;
+  const date = document.getElementById('kg-date').value;
+  const type = document.getElementById('kg-type').value;
+  const kg = parseFloat(document.getElementById('kg-amount').value);
+  const notes = document.getElementById('kg-notes').value;
+  const errEl = document.getElementById('kg-error');
+  errEl.style.display = 'none';
+  if(!date || !kg){ errEl.textContent = t('fillRequired'); errEl.style.display='block'; return; }
+  const data = {
+    tabName: viewingTab, date, type, kg, customer: '', rate: 0, negotiatedPrice: 0,
+    ounce: 0, marketPrice: 0, margin: 0, total: 0, notes, enteredBy: session.fullName,
+    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+  };
+  try{
+    if(id) await db.collection('records').doc(id).set(data, { merge: true });
+    else await db.collection('records').add(data);
+    closeAddKg();
+  }catch(e){ errEl.textContent = t('couldNotSave') + ' (' + e.message + ')'; errEl.style.display = 'block'; }
+}
+
 function openAddEmployee(){
   document.getElementById('ne-username').value = '';
   document.getElementById('ne-fullname').value = '';
@@ -505,7 +584,9 @@ async function enterApp(){
 
 async function buildSidebar(){
   const list = document.getElementById('tab-list');
+  const select = document.getElementById('tab-select');
   list.innerHTML = '';
+  select.innerHTML = '';
   if(session.role === 'admin'){
     if(!employees.length){
       const snap = await db.collection('employees').get();
@@ -516,25 +597,39 @@ async function buildSidebar(){
     allBtn.textContent = t('allEmployees');
     allBtn.onclick = (ev) => switchTab('ALL', ev.target);
     list.appendChild(allBtn);
+    addSelectOption(select, 'ALL', t('allEmployees'));
     employees.forEach(emp => {
       const b = document.createElement('button');
       b.className = 'tab-btn' + (viewingTab===emp.tabName ? ' active' : '');
       b.textContent = emp.fullName;
       b.onclick = (ev) => switchTab(emp.tabName, ev.target);
       list.appendChild(b);
+      addSelectOption(select, emp.tabName, emp.fullName);
     });
+    select.value = viewingTab;
   } else {
     const b = document.createElement('button');
     b.className = 'tab-btn active';
     b.textContent = session.fullName;
     list.appendChild(b);
+    addSelectOption(select, session.tabName, session.fullName);
+    select.value = session.tabName;
+    select.disabled = true;
   }
+}
+
+function addSelectOption(select, value, label){
+  const opt = document.createElement('option');
+  opt.value = value; opt.textContent = label;
+  select.appendChild(opt);
 }
 
 function switchTab(tabName, btnEl){
   viewingTab = tabName;
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
   if(btnEl) btnEl.classList.add('active');
+  const select = document.getElementById('tab-select');
+  if(select.value !== tabName) select.value = tabName;
   const canEdit = (tabName !== 'ALL') && session.role === 'admin';
   document.getElementById('entry-panel').style.display = canEdit ? 'block' : 'none';
   document.getElementById('viewing-title').textContent = tabName === 'ALL' ? t('combinedTitle') : tabName;
@@ -608,31 +703,38 @@ function renderAll(){
 }
 
 function computeTotals(){
-  const suly = { boughtKg:0, boughtTotal:0, soldKg:0, soldTotal:0 };
-  const buzan = { boughtKg:0, boughtTotal:0, soldKg:0, soldTotal:0 };
-  let totalMargin = 0;
+  const suly = { boughtKg:0, boughtTotal:0, soldKg:0, soldTotal:0, grantedKg:0 };
+  const buzan = { boughtKg:0, boughtTotal:0, soldKg:0, soldTotal:0, grantedKg:0 };
+  let totalMargin = 0, tradeCount = 0;
+  const tradeRecords = []; // excludes grants — grants carry no money and shouldn't skew margin/price averages
   currentRecords.forEach(r=>{
-    const kg = Number(r.kg)||0, total = Number(r.total)||0, buzanValue = (Number(r.marketPrice)||0)*kg;
+    const kg = Number(r.kg)||0;
+    if(r.type === GRANT_SULY){ suly.grantedKg += kg; return; }
+    if(r.type === GRANT_BUZAN){ buzan.grantedKg += kg; return; }
+    const total = Number(r.total)||0, buzanValue = (Number(r.marketPrice)||0)*kg;
     if(r.type === WAY1){ suly.soldKg += kg; suly.soldTotal += total; buzan.boughtKg += kg; buzan.boughtTotal += buzanValue; }
     else if(r.type === WAY2){ suly.boughtKg += kg; suly.boughtTotal += total; buzan.soldKg += kg; buzan.soldTotal += buzanValue; }
     totalMargin += Number(r.margin)||0;
+    tradeCount += 1;
+    tradeRecords.push(r);
   });
   const totalBuy = suly.boughtTotal + buzan.boughtTotal, totalSell = suly.soldTotal + buzan.soldTotal;
-  const totalKg = currentRecords.reduce((s,r)=>s+(Number(r.kg)||0),0);
-  const kgPriceSum = currentRecords.reduce((s,r)=>s+((Number(r.kg)||0)*(Number(r.negotiatedPrice)||0)),0);
+  const totalKg = tradeRecords.reduce((s,r)=>s+(Number(r.kg)||0),0);
+  const kgPriceSum = tradeRecords.reduce((s,r)=>s+((Number(r.kg)||0)*(Number(r.negotiatedPrice)||0)),0);
   const income = totalSell - totalBuy;
+  const sulyBalanceKg = suly.boughtKg + suly.grantedKg - suly.soldKg;
+  const buzanBalanceKg = buzan.boughtKg + buzan.grantedKg - buzan.soldKg;
   return {
     suly, buzan, totalBuy, totalSell, income,
-    sulyBalanceKg: suly.boughtKg - suly.soldKg, buzanBalanceKg: buzan.boughtKg - buzan.soldKg,
-    incomePerKg: totalKg ? income/totalKg : 0, avgMargin: currentRecords.length ? totalMargin/currentRecords.length : 0,
+    sulyBalanceKg, buzanBalanceKg,
+    incomePerKg: totalKg ? income/totalKg : 0, avgMargin: tradeCount ? totalMargin/tradeCount : 0,
     weightedAvgPrice: totalKg ? kgPriceSum/totalKg : 0,
     way1Net: suly.soldTotal - buzan.boughtTotal,   // Sell Suly / Buy Buzan
     way2Net: buzan.soldTotal - suly.boughtTotal,   // Buy Suly / Sell Buzan
     recordCount: currentRecords.length,
     netProfit: (function(){
-      const sulyBalance = suly.boughtKg - suly.soldKg;
       const combined = (suly.soldTotal - buzan.boughtTotal) + (buzan.soldTotal - suly.boughtTotal);
-      return sulyBalance !== 0 ? combined / sulyBalance : combined;
+      return sulyBalanceKg !== 0 ? combined / sulyBalanceKg : combined;
     })()
   };
 }
@@ -700,21 +802,31 @@ function renderTable(){
       '<span style="color:var(--muted);font-weight:400;font-size:13px;"> · '+dayKg.toFixed(2)+' kg · $'+Math.round(dayTotal).toLocaleString()+'</span></h3>';
     html += '<table><thead><tr>'+(showEmployee?'<th>'+t('colEmployee')+'</th>':'')+'<th>'+t('colType')+'</th><th>'+t('colKg')+'</th><th>'+t('colCustomer')+'</th><th>'+t('colRate')+'</th><th>'+t('colPrice')+'</th><th>'+t('colOunce')+'</th><th>'+t('colMarket')+'</th><th>'+t('colMargin')+'</th><th>'+t('colPlKg')+'</th><th>'+t('colTotal')+'</th><th>'+t('colEnteredBy')+'</th>'+(canEdit?'<th></th>':'')+'</tr></thead><tbody>';
     recs.forEach(r=>{
-      const marginClass = Number(r.margin) >= 0 ? 'margin-pos' : 'margin-neg';
-      const wayLabel = r.type === WAY1 ? t('way1') : t('way2');
-      html += '<tr>'+
+      const isGrant = r.type === GRANT_SULY || r.type === GRANT_BUZAN;
+      let wayLabel;
+      if(r.type === WAY1) wayLabel = t('way1');
+      else if(r.type === WAY2) wayLabel = t('way2');
+      else if(r.type === GRANT_SULY) wayLabel = '+' + t('grantSuly');
+      else wayLabel = '+' + t('grantBuzan');
+      html += '<tr'+(isGrant?' style="background:rgba(184,134,11,.06);"':'')+'>'+
         (showEmployee ? '<td>'+(r.tabName||'')+'</td>' : '')+
         '<td>'+wayLabel+'</td>'+
-        '<td class="num">'+Number(r.kg).toFixed(2)+'</td>'+
-        '<td>'+(r.customer||'')+'</td>'+
-        '<td class="num">'+Number(r.rate).toFixed(3)+'</td>'+
-        '<td class="num">$'+Number(r.negotiatedPrice).toFixed(2)+'</td>'+
-        '<td class="num">'+Number(r.ounce).toFixed(3)+'</td>'+
-        '<td class="num">$'+Number(r.marketPrice).toFixed(2)+'</td>'+
-        '<td class="num"><span class="margin-pill '+marginClass+'">$'+Number(r.margin).toFixed(2)+'</span></td>'+
-        '<td class="num">$'+(Number(r.margin)*Number(r.kg)).toFixed(2)+'</td>'+
-        '<td class="num">$'+Math.round(r.total).toLocaleString()+'</td>'+
-        '<td>'+(r.enteredBy||'')+'</td>';
+        '<td class="num">'+Number(r.kg).toFixed(2)+'</td>';
+      if(isGrant){
+        html += '<td>'+(r.notes||'')+'</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>$0</td>'+
+          '<td>'+(r.enteredBy||'')+'</td>';
+      } else {
+        const marginClass = Number(r.margin) >= 0 ? 'margin-pos' : 'margin-neg';
+        html += '<td>'+(r.customer||'')+'</td>'+
+          '<td class="num">'+Number(r.rate).toFixed(3)+'</td>'+
+          '<td class="num">$'+Number(r.negotiatedPrice).toFixed(2)+'</td>'+
+          '<td class="num">'+Number(r.ounce).toFixed(3)+'</td>'+
+          '<td class="num">$'+Number(r.marketPrice).toFixed(2)+'</td>'+
+          '<td class="num"><span class="margin-pill '+marginClass+'">$'+Number(r.margin).toFixed(2)+'</span></td>'+
+          '<td class="num">$'+(Number(r.margin)*Number(r.kg)).toFixed(2)+'</td>'+
+          '<td class="num">$'+Math.round(r.total).toLocaleString()+'</td>'+
+          '<td>'+(r.enteredBy||'')+'</td>';
+      }
       if(canEdit){
         html += '<td class="row-actions">'+
           '<button class="secondary" data-edit-id="'+r.id+'">'+t('edit')+'</button>'+
@@ -772,6 +884,7 @@ async function submitRecord(){
 function editRecord(id){
   const r = currentRecords.find(x => x.id === id);
   if(!r) return;
+  if(r.type === GRANT_SULY || r.type === GRANT_BUZAN){ editKgGrant(r); return; }
   document.getElementById('edit-id').value = r.id;
   document.getElementById('f-date').value = r.date;
   document.getElementById('f-type').value = r.type;
@@ -807,12 +920,18 @@ function resetForm(){
 
 /* ====== EXPORT ====== */
 function exportRows(){
-  return currentRecords.slice().sort((a,b)=> a.date < b.date ? 1 : -1).map(r => ({
-    Date: r.date, Type: r.type === WAY1 ? t('way1') : t('way2'), KG: Number(r.kg),
-    Customer: r.customer || '', Rate: Number(r.rate), 'Price/KG': Number(r.negotiatedPrice),
-    Ounce: Number(r.ounce), 'Market $/KG': Number(r.marketPrice), Margin: Number(r.margin),
-    'P/L x KG': Number(r.margin) * Number(r.kg), Total: Number(r.total), 'Entered by': r.enteredBy || ''
-  }));
+  return currentRecords.slice().sort((a,b)=> a.date < b.date ? 1 : -1).map(r => {
+    const isGrant = r.type === GRANT_SULY || r.type === GRANT_BUZAN;
+    const typeLabel = r.type === WAY1 ? t('way1') : r.type === WAY2 ? t('way2') : r.type === GRANT_SULY ? '+'+t('grantSuly') : '+'+t('grantBuzan');
+    return {
+      Date: r.date, Type: typeLabel, KG: Number(r.kg),
+      Customer: isGrant ? '' : (r.customer || ''), Rate: isGrant ? '' : Number(r.rate),
+      'Price/KG': isGrant ? '' : Number(r.negotiatedPrice), Ounce: isGrant ? '' : Number(r.ounce),
+      'Market $/KG': isGrant ? '' : Number(r.marketPrice), Margin: isGrant ? '' : Number(r.margin),
+      'P/L x KG': isGrant ? '' : Number(r.margin) * Number(r.kg), Total: isGrant ? '' : Number(r.total),
+      'Entered by': r.enteredBy || '', Notes: r.notes || ''
+    };
+  });
 }
 function exportXlsx(){
   const rows = exportRows();
