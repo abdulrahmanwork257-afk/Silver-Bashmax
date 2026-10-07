@@ -243,6 +243,7 @@
         <div data-i18n="marketPrice">Market price / KG<span class="num" id="c-market">$0.00</span></div>
         <div data-i18n="margin">Margin<span class="num" id="c-margin"><span class="margin-pill">$0.00</span></span></div>
         <div data-i18n="total">Total<span class="num" id="c-total">$0.00</span></div>
+        <div data-i18n="plKg">P/L × KG<span class="num" id="c-plkg">$0.00</span></div>
       </div>
       <button onclick="submitRecord()" data-i18n="saveTransaction">Save transaction</button>
       <button class="secondary" id="cancel-edit" style="display:none;margin-inline-start:8px;" onclick="resetForm()" data-i18n="cancelEdit">Cancel edit</button>
@@ -327,6 +328,7 @@ const I18N = {
     colType: 'Type', colKg: 'KG', colCustomer: 'Customer', colRate: 'Rate', colPrice: 'Price/KG',
     colOunce: 'Ounce', colMarket: 'Market $', colMargin: 'Margin', colTotal: 'Total',
     colEnteredBy: 'Entered by', colEmployee: 'Employee', netDiff: 'Net', weightedAvg: 'Weighted avg price',
+    plKg: 'P/L × KG', colPlKg: 'P/L × KG', netProfit: 'Net profit (per KG left in shop)',
     addEmployee: '+ Add employee', save: 'Save', cancel: 'Cancel', fillAllFields: 'Fill in all fields.',
     downloadXlsx: '⬇ Download XLSX', downloadPdf: '⬇ Download PDF', setupAlreadyDone: 'An admin account already exists — sign in instead.'
   },
@@ -357,6 +359,7 @@ const I18N = {
     colType: 'جۆر', colKg: 'کیلۆ', colCustomer: 'کڕیار', colRate: 'نرخ', colPrice: 'نرخ/کیلۆ',
     colOunce: 'ئۆنس', colMarket: 'نرخی بازاڕ', colMargin: 'جیاوازی', colTotal: 'کۆی گشتی',
     colEnteredBy: 'تۆمارکراو لەلایەن', colEmployee: 'کارمەند', netDiff: 'دەرئەنجام', weightedAvg: 'تێکڕای نرخی باری کێشراو',
+    plKg: 'قازانج/زیان × کیلۆ', colPlKg: 'قازانج/زیان × کیلۆ', netProfit: 'قازانجی ڕاستەقینە (بۆ هەر کیلۆی ماوە لە دووکان)',
     addEmployee: '+ زیادکردنی کارمەند', save: 'پاشەکەوتکردن', cancel: 'هەڵوەشاندنەوە', fillAllFields: 'هەموو خانەکان پڕبکەرەوە.',
     downloadXlsx: '⬇ داگرتنی XLSX', downloadPdf: '⬇ داگرتنی PDF', setupAlreadyDone: 'هەژماری بەڕێوەبەر پێشتر دروستکراوە — بچۆ ژوورەوە.'
   }
@@ -625,7 +628,12 @@ function computeTotals(){
     weightedAvgPrice: totalKg ? kgPriceSum/totalKg : 0,
     way1Net: suly.soldTotal - buzan.boughtTotal,   // Sell Suly / Buy Buzan
     way2Net: buzan.soldTotal - suly.boughtTotal,   // Buy Suly / Sell Buzan
-    recordCount: currentRecords.length
+    recordCount: currentRecords.length,
+    netProfit: (function(){
+      const sulyBalance = suly.boughtKg - suly.soldKg;
+      const combined = (suly.soldTotal - buzan.boughtTotal) + (buzan.soldTotal - suly.boughtTotal);
+      return sulyBalance !== 0 ? combined / sulyBalance : combined;
+    })()
   };
 }
 
@@ -663,6 +671,7 @@ function renderBalance(){
       '<div>'+t('incomePerKg')+'<span class="num">$'+r.incomePerKg.toFixed(2)+'</span></div>'+
       '<div>'+t('avgMargin')+'<span class="num">$'+r.avgMargin.toFixed(2)+'</span></div>'+
       '<div>'+t('weightedAvg')+'<span class="num">$'+r.weightedAvgPrice.toFixed(2)+'</span></div>'+
+      '<div>'+t('netProfit')+'<span class="num"><span class="margin-pill '+(r.netProfit>=0?'margin-pos':'margin-neg')+'">$'+r.netProfit.toFixed(2)+'</span></span></div>'+
       '<div>'+t('txnCount')+'<span class="num">'+r.recordCount+'</span></div>'+
     '</div>';
 }
@@ -689,7 +698,7 @@ function renderTable(){
     recs.forEach(r=>{ dayKg += Number(r.kg)||0; dayTotal += Number(r.total)||0; });
     html += '<h3 style="margin:20px 0 8px;font-size:15px;">'+date+
       '<span style="color:var(--muted);font-weight:400;font-size:13px;"> · '+dayKg.toFixed(2)+' kg · $'+Math.round(dayTotal).toLocaleString()+'</span></h3>';
-    html += '<table><thead><tr>'+(showEmployee?'<th>'+t('colEmployee')+'</th>':'')+'<th>'+t('colType')+'</th><th>'+t('colKg')+'</th><th>'+t('colCustomer')+'</th><th>'+t('colRate')+'</th><th>'+t('colPrice')+'</th><th>'+t('colOunce')+'</th><th>'+t('colMarket')+'</th><th>'+t('colMargin')+'</th><th>'+t('colTotal')+'</th><th>'+t('colEnteredBy')+'</th>'+(canEdit?'<th></th>':'')+'</tr></thead><tbody>';
+    html += '<table><thead><tr>'+(showEmployee?'<th>'+t('colEmployee')+'</th>':'')+'<th>'+t('colType')+'</th><th>'+t('colKg')+'</th><th>'+t('colCustomer')+'</th><th>'+t('colRate')+'</th><th>'+t('colPrice')+'</th><th>'+t('colOunce')+'</th><th>'+t('colMarket')+'</th><th>'+t('colMargin')+'</th><th>'+t('colPlKg')+'</th><th>'+t('colTotal')+'</th><th>'+t('colEnteredBy')+'</th>'+(canEdit?'<th></th>':'')+'</tr></thead><tbody>';
     recs.forEach(r=>{
       const marginClass = Number(r.margin) >= 0 ? 'margin-pos' : 'margin-neg';
       const wayLabel = r.type === WAY1 ? t('way1') : t('way2');
@@ -703,6 +712,7 @@ function renderTable(){
         '<td class="num">'+Number(r.ounce).toFixed(3)+'</td>'+
         '<td class="num">$'+Number(r.marketPrice).toFixed(2)+'</td>'+
         '<td class="num"><span class="margin-pill '+marginClass+'">$'+Number(r.margin).toFixed(2)+'</span></td>'+
+        '<td class="num">$'+(Number(r.margin)*Number(r.kg)).toFixed(2)+'</td>'+
         '<td class="num">$'+Math.round(r.total).toLocaleString()+'</td>'+
         '<td>'+(r.enteredBy||'')+'</td>';
       if(canEdit){
@@ -730,6 +740,7 @@ function updateComputed(){
   document.getElementById('c-ounce').textContent = ounce.toFixed(3);
   document.getElementById('c-market').textContent = '$' + market.toFixed(2);
   document.getElementById('c-total').textContent = '$' + Math.round(total).toLocaleString();
+  document.getElementById('c-plkg').textContent = '$' + (margin * kg).toFixed(2);
   const pill = document.querySelector('#c-margin .margin-pill');
   pill.textContent = '$' + margin.toFixed(2);
   pill.className = 'margin-pill ' + (margin >= 0 ? 'margin-pos' : 'margin-neg');
@@ -799,8 +810,8 @@ function exportRows(){
   return currentRecords.slice().sort((a,b)=> a.date < b.date ? 1 : -1).map(r => ({
     Date: r.date, Type: r.type === WAY1 ? t('way1') : t('way2'), KG: Number(r.kg),
     Customer: r.customer || '', Rate: Number(r.rate), 'Price/KG': Number(r.negotiatedPrice),
-    Ounce: Number(r.ounce), 'Market $/KG': Number(r.marketPrice), Margin: Number(r.margin), Total: Number(r.total),
-    'Entered by': r.enteredBy || ''
+    Ounce: Number(r.ounce), 'Market $/KG': Number(r.marketPrice), Margin: Number(r.margin),
+    'P/L x KG': Number(r.margin) * Number(r.kg), Total: Number(r.total), 'Entered by': r.enteredBy || ''
   }));
 }
 function exportXlsx(){
