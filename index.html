@@ -4,6 +4,16 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
 <title>Suly / Buzan Ledger</title>
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#07101c">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Ledger">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet">
@@ -50,11 +60,13 @@
     box-shadow:0 10px 30px rgba(31,38,135,.08), inset 0 1px 0 rgba(255,255,255,.5);
   }
 
+  .login-logo{display:block;width:104px;height:104px;margin:0 auto 18px;border-radius:50%;box-shadow:0 8px 22px rgba(0,0,0,.22);}
+  .side-logo{display:block;width:52px;height:52px;border-radius:50%;margin:0 0 12px;box-shadow:0 4px 12px rgba(0,0,0,.18);}
   /* ---- Login ---- */
   #login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
   .login-card{width:100%;max-width:380px;padding:36px;}
-  .login-card h1{font-size:26px;color:var(--ink);margin-bottom:4px;}
-  .login-card p{color:var(--muted);margin:0 0 26px;font-size:14px;}
+  .login-card h1{font-size:26px;color:var(--ink);margin-bottom:4px;text-align:center;}
+  .login-card p{color:var(--muted);margin:0 0 26px;font-size:14px;text-align:center;}
   label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:600;}
   input,select,textarea{
     width:100%;background:rgba(255,255,255,.7);border:1px solid var(--border-soft);color:var(--ink);
@@ -144,6 +156,7 @@
       display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;gap:10px 14px;
     }
     .sidebar .brand{white-space:nowrap;font-size:15px;margin:0;}
+    .side-logo{width:36px;height:36px;margin:0;flex-shrink:0;}
     .sidebar .who{display:none;}
     .lang-switch{margin:0;flex-shrink:0;width:auto;}
     #tab-list{display:none;}
@@ -172,6 +185,7 @@
 <!-- ============ LOGIN ============ -->
 <div id="login-screen">
   <div class="login-card glass">
+    <img class="login-logo" src="logo.png" alt="" onerror="this.style.display='none'">
     <h1 data-i18n="brand">Suly / Buzan Ledger</h1>
     <p data-i18n="loginSub">Sign in to record and review transactions.</p>
     <div id="login-error" class="error" style="display:none;"></div>
@@ -204,6 +218,7 @@
 <!-- ============ APP ============ -->
 <div id="app">
   <div class="sidebar glass">
+    <img class="side-logo" src="logo.png" alt="" onerror="this.style.display='none'">
     <div class="brand" data-i18n="brand">Suly / Buzan</div>
     <div class="who" id="who"></div>
     <div class="lang-switch"><button id="lang-en" onclick="setLang('en')">English</button><button id="lang-ckb" onclick="setLang('ckb')">کوردی</button></div>
@@ -297,6 +312,11 @@
     <label data-i18n="username">Username</label><input id="ne-username" type="text">
     <label data-i18n="fullName">Full name</label><input id="ne-fullname" type="text">
     <label data-i18n="password">Password</label><input id="ne-password" type="text">
+    <label data-i18n="roleLabel">Role</label>
+    <select id="ne-role">
+      <option value="employee" data-i18n="roleEmployee">Employee (own tab, view only)</option>
+      <option value="hr" data-i18n="roleHr">HR (view &amp; download everything, no editing)</option>
+    </select>
     <div id="ne-error" class="error" style="display:none;"></div>
     <button onclick="submitNewEmployee()" data-i18n="save">Save</button>
     <button class="secondary" style="margin-inline-start:8px;" onclick="closeAddEmployee()" data-i18n="cancel">Cancel</button>
@@ -309,12 +329,12 @@
    Firebase Console → Project settings → General → Your apps → SDK setup.
    ==================================================================== */
 const firebaseConfig = {
-  apiKey: "AIzaSyC5yab_KHtWM6awr7kuapSlz7SIeBjERlE",
-  authDomain: "suly-buzan-ledger.firebaseapp.com",
-  projectId: "suly-buzan-ledger",
-  storageBucket: "suly-buzan-ledger.firebasestorage.app",
-  messagingSenderId: "477670457012",
-  appId: "1:477670457012:web:3561167783fc27d4eee1e1"
+  apiKey: "AIzaSyC5yab_KHtWM6awr7kuapSlz7SIeBjERlE",
+  authDomain: "suly-buzan-ledger.firebaseapp.com",
+  projectId: "suly-buzan-ledger",
+  storageBucket: "suly-buzan-ledger.firebasestorage.app",
+  messagingSenderId: "477670457012",
+  appId: "1:477670457012:web:3561167783fc27d4eee1e1"
 };
 const AUTH_EMAIL_DOMAIN = 'ledger.local'; // usernames become username@ledger.local internally — not a real mailbox
 
@@ -323,6 +343,16 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 function toEmail(username){ return String(username).trim().toLowerCase().replace(/\s+/g,'') + '@' + AUTH_EMAIL_DOMAIN; }
+
+function canBrowseAll(){ return !!session && (session.role === 'admin' || session.role === 'hr'); }
+function subText(){
+  if(!session) return '';
+  if(viewingTab === 'ALL') return session.role === 'hr' ? t('hrSub') : t('combinedSub');
+  return session.role === 'admin' ? t('editableSub') : (session.role === 'hr' ? t('hrSub') : t('viewOnlySub'));
+}
+function fmtMoney(n){ return '$' + round2(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function round2(n){ return Math.round((Number(n)||0) * 100) / 100; }
+function fmtSigned(n){ const v = round2(n); return (v >= 0 ? '+' : '-') + '$' + Math.abs(v).toFixed(2); }
 
 const OUNCE_DIVISOR = 155.52;
 const TROY_OUNCE_GRAMS = 31.103479;
@@ -361,6 +391,7 @@ const I18N = {
     colOunce: 'Ounce', colMarket: 'Market $', colMargin: 'Margin', colTotal: 'Total',
     colEnteredBy: 'Entered by', colEmployee: 'Employee', netDiff: 'Net', weightedAvg: 'Weighted avg price',
     plKg: 'P/L × KG', colPlKg: 'P/L × KG', netProfit: 'Net profit (per KG left in shop)',
+    roleLabel: 'Role', roleEmployee: 'Employee (own tab, view only)', roleHr: 'HR (view & download everything, no editing)', hrSub: 'View and download only — HR cannot add or change data.',
     addKgAllowance: '+ Add KG allowance', grantType: 'Silver type', grantSuly: 'Suly', grantBuzan: 'Buzan',
     addEmployee: '+ Add employee', save: 'Save', cancel: 'Cancel', fillAllFields: 'Fill in all fields.',
     downloadXlsx: '⬇ Download XLSX', downloadPdf: '⬇ Download PDF', setupAlreadyDone: 'An admin account already exists — sign in instead.'
@@ -393,6 +424,7 @@ const I18N = {
     colOunce: 'ئۆنس', colMarket: 'نرخی بازاڕ', colMargin: 'جیاوازی', colTotal: 'کۆی گشتی',
     colEnteredBy: 'تۆمارکراو لەلایەن', colEmployee: 'کارمەند', netDiff: 'دەرئەنجام', weightedAvg: 'تێکڕای نرخی باری کێشراو',
     plKg: 'قازانج/زیان × کیلۆ', colPlKg: 'قازانج/زیان × کیلۆ', netProfit: 'قازانجی ڕاستەقینە (بۆ هەر کیلۆی ماوە لە دووکان)',
+    roleLabel: 'ڕۆڵ', roleEmployee: 'کارمەند (تەنها لاپەڕەی خۆی، تەنها بینین)', roleHr: 'سەرچاوە مرۆییەکان (بینین و داگرتنی هەموو شتێک، بێ دەستکاری)', hrSub: 'تەنها بینین و داگرتن — سەرچاوە مرۆییەکان ناتوانن زانیاری زیاد بکەن یان بیگۆڕن.',
     addKgAllowance: '+ زیادکردنی بڕی کیلۆ', grantType: 'جۆری زیو', grantSuly: 'سولی', grantBuzan: 'بوزان',
     addEmployee: '+ زیادکردنی کارمەند', save: 'پاشەکەوتکردن', cancel: 'هەڵوەشاندنەوە', fillAllFields: 'هەموو خانەکان پڕبکەرەوە.',
     downloadXlsx: '⬇ داگرتنی XLSX', downloadPdf: '⬇ داگرتنی PDF', setupAlreadyDone: 'هەژماری بەڕێوەبەر پێشتر دروستکراوە — بچۆ ژوورەوە.'
@@ -416,8 +448,7 @@ function setLang(lang){
   LANG = lang; localStorage.setItem('sbl_lang', lang);
   applyStaticTranslations();
   if(session){
-    document.getElementById('viewing-sub').textContent = viewingTab === 'ALL' ? t('combinedSub') :
-      (session.role === 'admin' ? t('editableSub') : t('viewOnlySub'));
+    document.getElementById('viewing-sub').textContent = subText();
     if(viewingTab === 'ALL') document.getElementById('viewing-title').textContent = t('combinedTitle');
     buildSidebar();
     renderAll();
@@ -502,7 +533,8 @@ async function submitNewEmployee(){
   const secondary = firebase.initializeApp(firebaseConfig, 'secondary-' + Date.now());
   try{
     const cred = await secondary.auth().createUserWithEmailAndPassword(toEmail(username), password);
-    await db.collection('employees').doc(cred.user.uid).set({ username, fullName, role: 'employee', tabName: fullName });
+    const role = document.getElementById('ne-role').value;
+    await db.collection('employees').doc(cred.user.uid).set({ username, fullName, role, tabName: role === 'hr' ? 'HR' : fullName });
     await secondary.auth().signOut();
     await secondary.delete();
     closeAddEmployee();
@@ -562,6 +594,7 @@ function openAddEmployee(){
   document.getElementById('ne-username').value = '';
   document.getElementById('ne-fullname').value = '';
   document.getElementById('ne-password').value = '';
+  document.getElementById('ne-role').value = 'employee';
   document.getElementById('ne-error').style.display = 'none';
   document.getElementById('add-employee-modal').style.display = 'flex';
 }
@@ -573,10 +606,10 @@ async function enterApp(){
   document.getElementById('app').classList.add('active');
   document.getElementById('who').textContent = session.fullName + ' · ' + session.role;
   document.getElementById('add-employee-link').style.display = session.role === 'admin' ? 'block' : 'none';
-  viewingTab = session.tabName;
+  viewingTab = session.role === 'hr' ? 'ALL' : session.tabName;
   document.getElementById('entry-panel').style.display = (session.role === 'admin') ? 'block' : 'none';
-  document.getElementById('viewing-title').textContent = viewingTab;
-  document.getElementById('viewing-sub').textContent = session.role === 'admin' ? t('editableSub') : t('viewOnlySub');
+  document.getElementById('viewing-title').textContent = viewingTab === 'ALL' ? t('combinedTitle') : viewingTab;
+  document.getElementById('viewing-sub').textContent = subText();
   await buildSidebar();
   document.getElementById('f-date').valueAsDate = new Date();
   setRange('today');
@@ -587,7 +620,7 @@ async function buildSidebar(){
   const select = document.getElementById('tab-select');
   list.innerHTML = '';
   select.innerHTML = '';
-  if(session.role === 'admin'){
+  if(canBrowseAll()){
     if(!employees.length){
       const snap = await db.collection('employees').get();
       employees = snap.docs.map(d => d.data());
@@ -598,7 +631,7 @@ async function buildSidebar(){
     allBtn.onclick = (ev) => switchTab('ALL', ev.target);
     list.appendChild(allBtn);
     addSelectOption(select, 'ALL', t('allEmployees'));
-    employees.forEach(emp => {
+    employees.filter(emp => emp.role !== 'hr').forEach(emp => {
       const b = document.createElement('button');
       b.className = 'tab-btn' + (viewingTab===emp.tabName ? ' active' : '');
       b.textContent = emp.fullName;
@@ -633,7 +666,7 @@ function switchTab(tabName, btnEl){
   const canEdit = (tabName !== 'ALL') && session.role === 'admin';
   document.getElementById('entry-panel').style.display = canEdit ? 'block' : 'none';
   document.getElementById('viewing-title').textContent = tabName === 'ALL' ? t('combinedTitle') : tabName;
-  document.getElementById('viewing-sub').textContent = tabName === 'ALL' ? t('combinedSub') : (session.role === 'admin' ? t('editableSub') : t('viewOnlySub'));
+  document.getElementById('viewing-sub').textContent = subText();
   loadData();
 }
 
@@ -698,7 +731,7 @@ function applyRangeFilter(){
 function renderAll(){
   renderWayCards();
   renderBalance();
-  document.getElementById('export-row').style.display = (currentRecords.length && viewingTab !== 'ALL') ? 'flex' : 'none';
+  document.getElementById('export-row').style.display = currentRecords.length ? 'flex' : 'none';
   renderTable();
 }
 
@@ -743,11 +776,11 @@ function renderWayCards(){
   const r = computeTotals();
   const grid = document.getElementById('way-grid');
   function leg(label, kg, total){
-    return '<div class="leg"><div><div class="label">'+label+'</div><div class="val num">'+kg.toFixed(2)+' kg</div></div><div class="amt num">$'+Math.round(total).toLocaleString()+'</div></div>';
+    return '<div class="leg"><div><div class="label">'+label+'</div><div class="val num">'+kg.toFixed(2)+' kg</div></div><div class="amt num">'+fmtMoney(total)+'</div></div>';
   }
   function netRow(net){
     const cls = net >= 0 ? 'margin-pos' : 'margin-neg';
-    return '<div class="leg"><div class="label">'+t('netDiff')+'</div><span class="margin-pill '+cls+'">$'+Math.round(net).toLocaleString()+'</span></div>';
+    return '<div class="leg"><div class="label">'+t('netDiff')+'</div><span class="margin-pill '+cls+'">'+fmtSigned(net)+'</span></div>';
   }
   grid.innerHTML =
     '<div class="way-card glass"><h3>'+t('way1Title')+'</h3><div class="rows">'+
@@ -767,13 +800,13 @@ function renderBalance(){
     '<div class="computed-row">'+
       '<div>'+t('sulyLeft')+'<span class="num">'+r.sulyBalanceKg.toFixed(2)+' kg</span></div>'+
       '<div>'+t('buzanLeft')+'<span class="num">'+r.buzanBalanceKg.toFixed(2)+' kg</span></div>'+
-      '<div>'+t('totalBought')+'<span class="num">$'+Math.round(r.totalBuy).toLocaleString()+'</span></div>'+
-      '<div>'+t('totalSold')+'<span class="num">$'+Math.round(r.totalSell).toLocaleString()+'</span></div>'+
-      '<div>'+t('income')+'<span class="num"><span class="margin-pill '+incomeClass+'">$'+Math.round(r.income).toLocaleString()+'</span></span></div>'+
-      '<div>'+t('incomePerKg')+'<span class="num">$'+r.incomePerKg.toFixed(2)+'</span></div>'+
-      '<div>'+t('avgMargin')+'<span class="num">$'+r.avgMargin.toFixed(2)+'</span></div>'+
+      '<div>'+t('totalBought')+'<span class="num">'+fmtMoney(r.totalBuy)+'</span></div>'+
+      '<div>'+t('totalSold')+'<span class="num">'+fmtMoney(r.totalSell)+'</span></div>'+
+      '<div>'+t('income')+'<span class="num"><span class="margin-pill '+incomeClass+'">'+fmtSigned(r.income)+'</span></span></div>'+
+      '<div>'+t('incomePerKg')+'<span class="num"><span class="margin-pill '+(r.incomePerKg>=0?'margin-pos':'margin-neg')+'">'+fmtSigned(r.incomePerKg)+'</span></span></div>'+
+      '<div>'+t('avgMargin')+'<span class="num"><span class="margin-pill '+(r.avgMargin>=0?'margin-pos':'margin-neg')+'">'+fmtSigned(r.avgMargin)+'</span></span></div>'+
       '<div>'+t('weightedAvg')+'<span class="num">$'+r.weightedAvgPrice.toFixed(2)+'</span></div>'+
-      '<div>'+t('netProfit')+'<span class="num"><span class="margin-pill '+(r.netProfit>=0?'margin-pos':'margin-neg')+'">$'+r.netProfit.toFixed(2)+'</span></span></div>'+
+      '<div>'+t('netProfit')+'<span class="num"><span class="margin-pill '+(r.netProfit>=0?'margin-pos':'margin-neg')+'">'+fmtSigned(r.netProfit)+'</span></span></div>'+
       '<div>'+t('txnCount')+'<span class="num">'+r.recordCount+'</span></div>'+
     '</div>';
 }
@@ -799,7 +832,7 @@ function renderTable(){
     let dayKg=0, dayTotal=0;
     recs.forEach(r=>{ dayKg += Number(r.kg)||0; dayTotal += Number(r.total)||0; });
     html += '<h3 style="margin:20px 0 8px;font-size:15px;">'+date+
-      '<span style="color:var(--muted);font-weight:400;font-size:13px;"> · '+dayKg.toFixed(2)+' kg · $'+Math.round(dayTotal).toLocaleString()+'</span></h3>';
+      '<span style="color:var(--muted);font-weight:400;font-size:13px;"> · '+dayKg.toFixed(2)+' kg · '+fmtMoney(dayTotal)+'</span></h3>';
     html += '<table><thead><tr>'+(showEmployee?'<th>'+t('colEmployee')+'</th>':'')+'<th>'+t('colType')+'</th><th>'+t('colKg')+'</th><th>'+t('colCustomer')+'</th><th>'+t('colRate')+'</th><th>'+t('colPrice')+'</th><th>'+t('colOunce')+'</th><th>'+t('colMarket')+'</th><th>'+t('colMargin')+'</th><th>'+t('colPlKg')+'</th><th>'+t('colTotal')+'</th><th>'+t('colEnteredBy')+'</th>'+(canEdit?'<th></th>':'')+'</tr></thead><tbody>';
     recs.forEach(r=>{
       const isGrant = r.type === GRANT_SULY || r.type === GRANT_BUZAN;
@@ -819,12 +852,12 @@ function renderTable(){
         const marginClass = Number(r.margin) >= 0 ? 'margin-pos' : 'margin-neg';
         html += '<td>'+(r.customer||'')+'</td>'+
           '<td class="num">'+Number(r.rate).toFixed(3)+'</td>'+
-          '<td class="num">$'+Number(r.negotiatedPrice).toFixed(2)+'</td>'+
-          '<td class="num">'+Number(r.ounce).toFixed(3)+'</td>'+
-          '<td class="num">$'+Number(r.marketPrice).toFixed(2)+'</td>'+
-          '<td class="num"><span class="margin-pill '+marginClass+'">$'+Number(r.margin).toFixed(2)+'</span></td>'+
-          '<td class="num">$'+(Number(r.margin)*Number(r.kg)).toFixed(2)+'</td>'+
-          '<td class="num">$'+Math.round(r.total).toLocaleString()+'</td>'+
+          '<td class="num">'+fmtMoney(r.negotiatedPrice)+'</td>'+
+          '<td class="num">'+Number(r.ounce).toFixed(2)+'</td>'+
+          '<td class="num">'+fmtMoney(r.marketPrice)+'</td>'+
+          '<td class="num"><span class="margin-pill '+marginClass+'">'+fmtSigned(r.margin)+'</span></td>'+
+          '<td class="num"><span class="margin-pill '+(Number(r.margin)>=0?'margin-pos':'margin-neg')+'">'+fmtSigned(Number(r.margin)*Number(r.kg))+'</span></td>'+
+          '<td class="num">'+fmtMoney(r.total)+'</td>'+
           '<td>'+(r.enteredBy||'')+'</td>';
       }
       if(canEdit){
@@ -849,12 +882,12 @@ function updateComputed(){
   const market = (rate / TROY_OUNCE_GRAMS) * 1000;
   const margin = price - market;
   const total = price * kg;
-  document.getElementById('c-ounce').textContent = ounce.toFixed(3);
-  document.getElementById('c-market').textContent = '$' + market.toFixed(2);
-  document.getElementById('c-total').textContent = '$' + Math.round(total).toLocaleString();
-  document.getElementById('c-plkg').textContent = '$' + (margin * kg).toFixed(2);
+  document.getElementById('c-ounce').textContent = ounce.toFixed(2);
+  document.getElementById('c-market').textContent = fmtMoney(market);
+  document.getElementById('c-total').textContent = fmtMoney(total);
+  document.getElementById('c-plkg').textContent = fmtSigned(margin * kg);
   const pill = document.querySelector('#c-margin .margin-pill');
-  pill.textContent = '$' + margin.toFixed(2);
+  pill.textContent = fmtSigned(margin);
   pill.className = 'margin-pill ' + (margin >= 0 ? 'margin-pos' : 'margin-neg');
   return { ounce, market, margin, total };
 }
@@ -920,37 +953,71 @@ function resetForm(){
 
 /* ====== EXPORT ====== */
 function exportRows(){
+  const showEmp = viewingTab === 'ALL';
   return currentRecords.slice().sort((a,b)=> a.date < b.date ? 1 : -1).map(r => {
     const isGrant = r.type === GRANT_SULY || r.type === GRANT_BUZAN;
     const typeLabel = r.type === WAY1 ? t('way1') : r.type === WAY2 ? t('way2') : r.type === GRANT_SULY ? '+'+t('grantSuly') : '+'+t('grantBuzan');
-    return {
-      Date: r.date, Type: typeLabel, KG: Number(r.kg),
-      Customer: isGrant ? '' : (r.customer || ''), Rate: isGrant ? '' : Number(r.rate),
-      'Price/KG': isGrant ? '' : Number(r.negotiatedPrice), Ounce: isGrant ? '' : Number(r.ounce),
-      'Market $/KG': isGrant ? '' : Number(r.marketPrice), Margin: isGrant ? '' : Number(r.margin),
-      'P/L x KG': isGrant ? '' : Number(r.margin) * Number(r.kg), Total: isGrant ? '' : Number(r.total),
-      'Entered by': r.enteredBy || '', Notes: r.notes || ''
-    };
+    const row = {};
+    if(showEmp) row['Employee'] = r.tabName || '';
+    row['Date'] = r.date; row['Type'] = typeLabel; row['KG'] = round2(r.kg);
+    row['Customer'] = isGrant ? '' : (r.customer || '');
+    row['Rate'] = isGrant ? '' : Number(r.rate);            // kept exactly as typed
+    row['Price/KG'] = isGrant ? '' : round2(r.negotiatedPrice);
+    row['Ounce'] = isGrant ? '' : round2(r.ounce);
+    row['Market $/KG'] = isGrant ? '' : round2(r.marketPrice);
+    row['Margin'] = isGrant ? '' : round2(r.margin);
+    row['P/L x KG'] = isGrant ? '' : round2(Number(r.margin) * Number(r.kg));
+    row['Total'] = isGrant ? '' : round2(r.total);
+    row['Entered by'] = r.enteredBy || '';
+    row['Notes'] = r.notes || '';
+    return row;
   });
 }
+const SIGNED_COLS = ['Margin','P/L x KG'];
+function exportName(){ return (viewingTab === 'ALL' ? 'All_employees' : viewingTab) + '_' + ymd(new Date()); }
+
 function exportXlsx(){
   const rows = exportRows();
   if(!rows.length) return;
   const ws = XLSX.utils.json_to_sheet(rows);
+  const cols = Object.keys(rows[0]);
+  rows.forEach((row, i) => cols.forEach((c, j) => {
+    const cell = ws[XLSX.utils.encode_cell({ r: i + 1, c: j })];
+    if(!cell || cell.t !== 'n') return;
+    if(SIGNED_COLS.indexOf(c) !== -1) cell.z = '[Color10]+0.00;[Red]-0.00;0.00'; // green +, red -
+    else if(c === 'Rate') cell.z = '0.000';
+    else cell.z = '0.00';
+  }));
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, viewingTab.substring(0,31));
-  XLSX.writeFile(wb, viewingTab + '_' + ymd(new Date()) + '.xlsx');
+  XLSX.utils.book_append_sheet(wb, ws, (viewingTab === 'ALL' ? 'All employees' : viewingTab).substring(0,31));
+  XLSX.writeFile(wb, exportName() + '.xlsx');
 }
+
 function exportPdf(){
   const rows = exportRows();
   if(!rows.length) return;
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation: 'landscape' });
-  doc.setFontSize(14); doc.text(viewingTab + ' — ' + t('transactions'), 14, 16);
+  doc.setFontSize(14); doc.text((viewingTab === 'ALL' ? t('allEmployees') : viewingTab) + ' — ' + t('transactions'), 14, 16);
   const cols = Object.keys(rows[0]);
-  const body = rows.map(r => cols.map(c => String(r[c])));
-  doc.autoTable({ head: [cols], body: body, startY: 22, styles: { fontSize: 8 } });
-  doc.save(viewingTab + '_' + ymd(new Date()) + '.pdf');
+  const body = rows.map(r => cols.map(c => {
+    const v = r[c];
+    if(typeof v !== 'number') return String(v);
+    if(SIGNED_COLS.indexOf(c) !== -1) return (v >= 0 ? '+' : '-') + Math.abs(v).toFixed(2);
+    if(c === 'Rate') return String(v);
+    return v.toFixed(2);
+  }));
+  doc.autoTable({
+    head: [cols], body: body, startY: 22, styles: { fontSize: 8 },
+    didParseCell: function(data){
+      if(data.section !== 'body') return;
+      if(SIGNED_COLS.indexOf(cols[data.column.index]) === -1) return;
+      const txt = String(data.cell.raw);
+      if(txt.charAt(0) === '+'){ data.cell.styles.textColor = [28,124,51]; data.cell.styles.fontStyle = 'bold'; }
+      else if(txt.charAt(0) === '-'){ data.cell.styles.textColor = [198,40,40]; data.cell.styles.fontStyle = 'bold'; }
+    }
+  });
+  doc.save(exportName() + '.pdf');
 }
 
 /* ====== INIT ====== */
