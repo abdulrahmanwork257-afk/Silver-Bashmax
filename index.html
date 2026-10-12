@@ -26,7 +26,7 @@
 <!-- Export libraries -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
 <style>
   :root{
@@ -134,6 +134,7 @@
   .computed-row{display:flex;gap:22px;padding:14px 0;margin:4px 0 18px;border-top:1px solid var(--border-soft);border-bottom:1px solid var(--border-soft);flex-wrap:wrap;}
   .computed-row div{font-size:12px;color:var(--muted);}
   .computed-row span{display:block;color:var(--ink);font-size:15px;margin-top:2px;font-weight:600;}
+  .computed-row small.kgnote{display:block;font-size:11px;color:var(--muted);opacity:.8;margin-top:1px;}
   .margin-pill{display:inline-block;padding:3px 10px;border-radius:999px;font-size:13px;font-weight:600;}
   .margin-pos{background:var(--green-bg);color:var(--green-fg);}
   .margin-neg{background:var(--red-bg);color:var(--red-fg);}
@@ -390,8 +391,9 @@ const I18N = {
     colType: 'Type', colKg: 'KG', colCustomer: 'Customer', colRate: 'Rate', colPrice: 'Price/KG',
     colOunce: 'Ounce', colMarket: 'Market $', colMargin: 'Margin', colTotal: 'Total',
     colEnteredBy: 'Entered by', colEmployee: 'Employee', netDiff: 'Net', weightedAvg: 'Weighted avg price',
-    plKg: 'P/L × KG', colPlKg: 'P/L × KG', netProfit: 'Net profit (per KG left in shop)',
+    plKg: 'P/L × KG', colPlKg: 'P/L × KG', netProfit: 'Net profit (per KG left in shop)', netProfitClosed: 'Profit on completed buy & sell (without remaining KG)', netProfitOpen: 'Profit on remaining KG only', toSell: 'left to sell', toBuy: 'left to buy back',
     roleLabel: 'Role', roleEmployee: 'Employee (own tab, view only)', roleHr: 'HR (view & download everything, no editing)', hrSub: 'View and download only — HR cannot add or change data.',
+    exportFailed: 'Could not create the PDF.',
     addKgAllowance: '+ Add KG allowance', grantType: 'Silver type', grantSuly: 'Suly', grantBuzan: 'Buzan',
     addEmployee: '+ Add employee', save: 'Save', cancel: 'Cancel', fillAllFields: 'Fill in all fields.',
     downloadXlsx: '⬇ Download XLSX', downloadPdf: '⬇ Download PDF', setupAlreadyDone: 'An admin account already exists — sign in instead.'
@@ -423,8 +425,9 @@ const I18N = {
     colType: 'جۆر', colKg: 'کیلۆ', colCustomer: 'کڕیار', colRate: 'نرخ', colPrice: 'نرخ/کیلۆ',
     colOunce: 'ئۆنس', colMarket: 'نرخی بازاڕ', colMargin: 'جیاوازی', colTotal: 'کۆی گشتی',
     colEnteredBy: 'تۆمارکراو لەلایەن', colEmployee: 'کارمەند', netDiff: 'دەرئەنجام', weightedAvg: 'تێکڕای نرخی باری کێشراو',
-    plKg: 'قازانج/زیان × کیلۆ', colPlKg: 'قازانج/زیان × کیلۆ', netProfit: 'قازانجی ڕاستەقینە (بۆ هەر کیلۆی ماوە لە دووکان)',
+    plKg: 'قازانج/زیان × کیلۆ', colPlKg: 'قازانج/زیان × کیلۆ', netProfit: 'قازانجی ڕاستەقینە (بۆ هەر کیلۆی ماوە لە دووکان)', netProfitClosed: 'قازانجی کڕین و فرۆشتنی تەواوبوو (بەبێ کیلۆی ماوە)', netProfitOpen: 'قازانجی تەنها ئەو کیلۆیانەی ماونەتەوە', toSell: 'ماوە بۆ فرۆشتن', toBuy: 'ماوە بۆ کڕین',
     roleLabel: 'ڕۆڵ', roleEmployee: 'کارمەند (تەنها لاپەڕەی خۆی، تەنها بینین)', roleHr: 'سەرچاوە مرۆییەکان (بینین و داگرتنی هەموو شتێک، بێ دەستکاری)', hrSub: 'تەنها بینین و داگرتن — سەرچاوە مرۆییەکان ناتوانن زانیاری زیاد بکەن یان بیگۆڕن.',
+    exportFailed: 'نەتوانرا PDF دروست بکرێت.',
     addKgAllowance: '+ زیادکردنی بڕی کیلۆ', grantType: 'جۆری زیو', grantSuly: 'سولی', grantBuzan: 'بوزان',
     addEmployee: '+ زیادکردنی کارمەند', save: 'پاشەکەوتکردن', cancel: 'هەڵوەشاندنەوە', fillAllFields: 'هەموو خانەکان پڕبکەرەوە.',
     downloadXlsx: '⬇ داگرتنی XLSX', downloadPdf: '⬇ داگرتنی PDF', setupAlreadyDone: 'هەژماری بەڕێوەبەر پێشتر دروستکراوە — بچۆ ژوورەوە.'
@@ -768,6 +771,18 @@ function computeTotals(){
     netProfit: (function(){
       const combined = (suly.soldTotal - buzan.boughtTotal) + (buzan.soldTotal - suly.boughtTotal);
       return sulyBalanceKg !== 0 ? combined / sulyBalanceKg : combined;
+    })(),
+    // Split of the total result into: matched (closed) kg and unmatched (still open) kg.
+    // Profit per KG of each way is applied to its own kg, so closed + open = way1Net + way2Net exactly.
+    split: (function(){
+      const w1pk = suly.soldKg ? (suly.soldTotal - buzan.boughtTotal) / suly.soldKg : 0;     // profit per KG, Sell Suly / Buy Buzan
+      const w2pk = suly.boughtKg ? (buzan.soldTotal - suly.boughtTotal) / suly.boughtKg : 0; // profit per KG, Buy Suly / Sell Buzan
+      const matchedKg = Math.min(suly.soldKg, suly.boughtKg);
+      const closed = matchedKg * (w1pk + w2pk);
+      const openKg = Math.abs(suly.boughtKg - suly.soldKg);
+      const open = suly.soldKg > suly.boughtKg ? openKg * w1pk : openKg * w2pk;
+      return { matchedKg: matchedKg, openKg: openKg, closed: closed, open: open,
+               openSide: suly.soldKg > suly.boughtKg ? 'toBuy' : 'toSell' };
     })()
   };
 }
@@ -807,6 +822,8 @@ function renderBalance(){
       '<div>'+t('avgMargin')+'<span class="num"><span class="margin-pill '+(r.avgMargin>=0?'margin-pos':'margin-neg')+'">'+fmtSigned(r.avgMargin)+'</span></span></div>'+
       '<div>'+t('weightedAvg')+'<span class="num">$'+r.weightedAvgPrice.toFixed(2)+'</span></div>'+
       '<div>'+t('netProfit')+'<span class="num"><span class="margin-pill '+(r.netProfit>=0?'margin-pos':'margin-neg')+'">'+fmtSigned(r.netProfit)+'</span></span></div>'+
+      '<div>'+t('netProfitClosed')+'<small class="kgnote">'+r.split.matchedKg.toFixed(2)+' kg</small><span class="num"><span class="margin-pill '+(r.split.closed>=0?'margin-pos':'margin-neg')+'">'+fmtSigned(r.split.closed)+'</span></span></div>'+
+      '<div>'+t('netProfitOpen')+'<small class="kgnote">'+r.split.openKg.toFixed(2)+' kg '+t(r.split.openSide==='toBuy'?'toBuy':'toSell')+'</small><span class="num"><span class="margin-pill '+(r.split.open>=0?'margin-pos':'margin-neg')+'">'+fmtSigned(r.split.open)+'</span></span></div>'+
       '<div>'+t('txnCount')+'<span class="num">'+r.recordCount+'</span></div>'+
     '</div>';
 }
@@ -842,15 +859,15 @@ function renderTable(){
       else if(r.type === GRANT_SULY) wayLabel = '+' + t('grantSuly');
       else wayLabel = '+' + t('grantBuzan');
       html += '<tr'+(isGrant?' style="background:rgba(184,134,11,.06);"':'')+'>'+
-        (showEmployee ? '<td>'+(r.tabName||'')+'</td>' : '')+
+        (showEmployee ? '<td>'+esc(r.tabName)+'</td>' : '')+
         '<td>'+wayLabel+'</td>'+
         '<td class="num">'+Number(r.kg).toFixed(2)+'</td>';
       if(isGrant){
-        html += '<td>'+(r.notes||'')+'</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>$0</td>'+
-          '<td>'+(r.enteredBy||'')+'</td>';
+        html += '<td>'+esc(r.notes)+'</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>$0</td>'+
+          '<td>'+esc(r.enteredBy)+'</td>';
       } else {
         const marginClass = Number(r.margin) >= 0 ? 'margin-pos' : 'margin-neg';
-        html += '<td>'+(r.customer||'')+'</td>'+
+        html += '<td>'+esc(r.customer)+'</td>'+
           '<td class="num">'+Number(r.rate).toFixed(3)+'</td>'+
           '<td class="num">'+fmtMoney(r.negotiatedPrice)+'</td>'+
           '<td class="num">'+Number(r.ounce).toFixed(2)+'</td>'+
@@ -858,7 +875,7 @@ function renderTable(){
           '<td class="num"><span class="margin-pill '+marginClass+'">'+fmtSigned(r.margin)+'</span></td>'+
           '<td class="num"><span class="margin-pill '+(Number(r.margin)>=0?'margin-pos':'margin-neg')+'">'+fmtSigned(Number(r.margin)*Number(r.kg))+'</span></td>'+
           '<td class="num">'+fmtMoney(r.total)+'</td>'+
-          '<td>'+(r.enteredBy||'')+'</td>';
+          '<td>'+esc(r.enteredBy)+'</td>';
       }
       if(canEdit){
         html += '<td class="row-actions">'+
@@ -952,6 +969,16 @@ function resetForm(){
 }
 
 /* ====== EXPORT ====== */
+const EXPORT_COLS = [ // [data key, i18n key for the column title]
+  ['Employee','colEmployee'], ['Date','date'], ['Type','colType'], ['KG','colKg'], ['Customer','colCustomer'],
+  ['Rate','colRate'], ['Price/KG','colPrice'], ['Ounce','colOunce'], ['Market $/KG','colMarket'],
+  ['Margin','colMargin'], ['P/L x KG','colPlKg'], ['Total','colTotal'], ['Entered by','colEnteredBy'], ['Notes','notes']
+];
+const SIGNED_COLS = ['Margin','P/L x KG'];
+function exportLabel(key){ const d = EXPORT_COLS.find(c => c[0] === key); return d ? t(d[1]) : key; }
+function esc(x){ return String(x == null ? '' : x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function num2(v){ return Number(v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+
 function exportRows(){
   const showEmp = viewingTab === 'ALL';
   return currentRecords.slice().sort((a,b)=> a.date < b.date ? 1 : -1).map(r => {
@@ -961,7 +988,7 @@ function exportRows(){
     if(showEmp) row['Employee'] = r.tabName || '';
     row['Date'] = r.date; row['Type'] = typeLabel; row['KG'] = round2(r.kg);
     row['Customer'] = isGrant ? '' : (r.customer || '');
-    row['Rate'] = isGrant ? '' : Number(r.rate);            // kept exactly as typed
+    row['Rate'] = isGrant ? '' : +Number(r.rate).toFixed(3);            // kept exactly as typed
     row['Price/KG'] = isGrant ? '' : round2(r.negotiatedPrice);
     row['Ounce'] = isGrant ? '' : round2(r.ounce);
     row['Market $/KG'] = isGrant ? '' : round2(r.marketPrice);
@@ -973,14 +1000,15 @@ function exportRows(){
     return row;
   });
 }
-const SIGNED_COLS = ['Margin','P/L x KG'];
 function exportName(){ return (viewingTab === 'ALL' ? 'All_employees' : viewingTab) + '_' + ymd(new Date()); }
+function exportTitle(){ return (viewingTab === 'ALL' ? t('allEmployees') : viewingTab) + ' — ' + t('transactions'); }
 
 function exportXlsx(){
   const rows = exportRows();
   if(!rows.length) return;
   const ws = XLSX.utils.json_to_sheet(rows);
   const cols = Object.keys(rows[0]);
+  XLSX.utils.sheet_add_aoa(ws, [cols.map(exportLabel)], { origin: 'A1' });   // column titles in the current language
   rows.forEach((row, i) => cols.forEach((c, j) => {
     const cell = ws[XLSX.utils.encode_cell({ r: i + 1, c: j })];
     if(!cell || cell.t !== 'n') return;
@@ -989,35 +1017,115 @@ function exportXlsx(){
     else cell.z = '0.00';
   }));
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, (viewingTab === 'ALL' ? 'All employees' : viewingTab).substring(0,31));
+  wb.Workbook = { Views: [{ RTL: LANG === 'ckb' }] };                          // right-to-left sheet for Kurdish
+  const sheetName = (viewingTab === 'ALL' ? t('allEmployees') : viewingTab).replace(/[\\\/\?\*\[\]:]/g,' ').substring(0,31);
+  XLSX.utils.book_append_sheet(wb, ws, sheetName);
   XLSX.writeFile(wb, exportName() + '.xlsx');
 }
 
-function exportPdf(){
+/* ---- PDF ----
+   jsPDF can't join Arabic-script letters or lay out right-to-left text, so Kurdish (and any Kurdish customer
+   names/notes, even in English mode) came out as symbols. Instead the browser draws each page as HTML — it
+   already shapes Arabic correctly — and the pages are placed into the PDF as images. */
+const PDF_W = 1123, PDF_H = 794;   // A4 landscape at 96 dpi
+const PDF_CSS =
+  '.pdf-page{position:fixed;left:-12000px;top:0;width:'+PDF_W+'px;height:'+PDF_H+'px;box-sizing:border-box;padding:26px 30px;background:#fff;color:#111;overflow:hidden;letter-spacing:normal;word-spacing:normal;font-family:"Noto Sans Arabic","Inter",-apple-system,"Segoe UI",Arial,sans-serif;font-size:11px;line-height:1.35;}'+
+  '.pdf-page.measure{height:auto;overflow:visible;}'+
+  '.pdf-page .pdf-title{margin-bottom:10px;}'+
+  '.pdf-page .t1{font-size:18px;font-weight:700;}'+
+  '.pdf-page .t2{font-size:11px;color:#666;margin-top:2px;}'+
+  '.pdf-page table{width:100%;border-collapse:collapse;table-layout:fixed;}'+
+  '.pdf-page th{background:#07101c;color:#fff;font-weight:600;padding:6px 3px;text-align:center;font-size:10px;overflow-wrap:anywhere;white-space:normal;}'+
+  '.pdf-page td{padding:5px 3px;text-align:center;border-bottom:1px solid #e3e3e3;vertical-align:middle;font-size:10px;overflow-wrap:anywhere;white-space:normal;}'+
+  '.pdf-page tbody tr:nth-child(even) td{background:#f6f6f4;}'+
+  '.pdf-page td.n{white-space:nowrap;}'+
+  '.pdf-page td.pos{color:#1c7c33;font-weight:700;}'+
+  '.pdf-page td.neg{color:#c62828;font-weight:700;}'+
+  '.pdf-page .pdf-foot{position:absolute;bottom:12px;left:30px;right:30px;font-size:10px;color:#888;text-align:center;}';
+
+const PDF_COL_W = { 'Employee':7.5, 'Date':7, 'Type':15, 'KG':4.5, 'Customer':9, 'Rate':5, 'Price/KG':6, 'Ounce':4,
+  'Market $/KG':6.5, 'Margin':6, 'P/L x KG':7, 'Total':7.5, 'Entered by':11.5, 'Notes':9 };
+function ltrSpan(x){ return '<span dir="ltr">'+esc(x)+'</span>'; }
+function cleanRate(v){ return String(+Number(v).toFixed(3)); }   // 60.739999999999995 -> 60.74
+
+function pdfCell(col, v){
+  if(v === '' || v == null) return '<td></td>';
+  if(typeof v === 'number'){
+    if(SIGNED_COLS.indexOf(col) !== -1){ const pos = v >= 0; return '<td class="n '+(pos?'pos':'neg')+'" dir="ltr">'+(pos?'+':'-')+num2(Math.abs(v))+'</td>'; }
+    if(col === 'Rate') return '<td class="n" dir="ltr">'+cleanRate(v)+'</td>';
+    return '<td class="n" dir="ltr">'+num2(v)+'</td>';
+  }
+  return '<td dir="auto">'+esc(v)+'</td>';
+}
+function pdfPage(cols, rowsHtml, pageNo, pageCount, extraClass){
+  const rtl = LANG === 'ckb';
+  const from = document.getElementById('range-from').value, to = document.getElementById('range-to').value;
+  const range = (!from && !to) ? t('allTime') : ((from || '…') + '  →  ' + (to || '…'));
+  const totalW = cols.reduce((a, c) => a + (PDF_COL_W[c] || 8), 0);
+  const colgroup = '<colgroup>' + cols.map(c => '<col style="width:' + ((PDF_COL_W[c] || 8) * 100 / totalW).toFixed(2) + '%">').join('') + '</colgroup>';
+  const titleName = viewingTab === 'ALL' ? esc(t('allEmployees')) : '<bdi>' + esc(viewingTab) + '</bdi>';
+  const el = document.createElement('div');
+  el.className = 'pdf-page' + (extraClass ? ' ' + extraClass : '');
+  el.setAttribute('dir', rtl ? 'rtl' : 'ltr');
+  el.innerHTML =
+    '<style>'+PDF_CSS+'</style>'+
+    '<div class="pdf-title"><div class="t1">'+titleName+' — '+esc(t('transactions'))+'</div><div class="t2">'+ltrSpan(range)+'  ·  '+ltrSpan(ymd(new Date()))+'</div></div>'+
+    '<table>'+colgroup+'<thead><tr>'+cols.map(c => '<th>'+esc(exportLabel(c))+'</th>').join('')+'</tr></thead><tbody>'+rowsHtml+'</tbody></table>'+
+    (pageCount ? '<div class="pdf-foot" dir="ltr">'+pageNo+' / '+pageCount+'</div>' : '');
+  return el;
+}
+
+async function exportPdf(){
   const rows = exportRows();
   if(!rows.length) return;
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ orientation: 'landscape' });
-  doc.setFontSize(14); doc.text((viewingTab === 'ALL' ? t('allEmployees') : viewingTab) + ' — ' + t('transactions'), 14, 16);
-  const cols = Object.keys(rows[0]);
-  const body = rows.map(r => cols.map(c => {
-    const v = r[c];
-    if(typeof v !== 'number') return String(v);
-    if(SIGNED_COLS.indexOf(c) !== -1) return (v >= 0 ? '+' : '-') + Math.abs(v).toFixed(2);
-    if(c === 'Rate') return String(v);
-    return v.toFixed(2);
-  }));
-  doc.autoTable({
-    head: [cols], body: body, startY: 22, styles: { fontSize: 8 },
-    didParseCell: function(data){
-      if(data.section !== 'body') return;
-      if(SIGNED_COLS.indexOf(cols[data.column.index]) === -1) return;
-      const txt = String(data.cell.raw);
-      if(txt.charAt(0) === '+'){ data.cell.styles.textColor = [28,124,51]; data.cell.styles.fontStyle = 'bold'; }
-      else if(txt.charAt(0) === '-'){ data.cell.styles.textColor = [198,40,40]; data.cell.styles.fontStyle = 'bold'; }
+  const btns = Array.from(document.querySelectorAll('#export-row button'));
+  const labels = btns.map(b => b.textContent);
+  btns.forEach(b => { b.disabled = true; b.textContent = '…'; });
+  const stage = [];
+  try{
+    const cols = Object.keys(rows[0]);
+    const rowHtml = rows.map(r => '<tr>' + cols.map(c => pdfCell(c, r[c])).join('') + '</tr>');
+
+    // make sure the Arabic-script font is actually loaded before anything is measured or drawn
+    try{ await document.fonts.load('400 12px "Noto Sans Arabic"', 'ڕێنووس کوردی سۆرانی ابج'); await document.fonts.load('700 12px "Noto Sans Arabic"', 'ڕێنووس ابج'); }catch(_){}
+    await document.fonts.ready;
+
+    // 1) measure every row once so pages are filled without cutting a row in half
+    const probe = pdfPage(cols, rowHtml.join(''), 0, 0, 'measure');
+    document.body.appendChild(probe); stage.push(probe);
+    const rowEls = Array.from(probe.querySelectorAll('tbody tr'));
+    const rowH = rowEls.map(tr => tr.getBoundingClientRect().height);
+    const headH = probe.querySelector('thead').getBoundingClientRect().height;
+    const titleH = probe.querySelector('.pdf-title').getBoundingClientRect().height + 10;
+    const capacity = PDF_H - 26*2 - titleH - headH - 22;       // room left for body rows on one page
+    probe.remove(); stage.pop();
+
+    const pages = []; let cur = [], used = 0;
+    rowH.forEach((h, i) => {
+      if(cur.length && used + h > capacity){ pages.push(cur); cur = []; used = 0; }
+      cur.push(rowHtml[i]); used += h;
+    });
+    if(cur.length) pages.push(cur);
+
+    // 2) draw each page with the browser and drop it into the PDF
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4', compress: true });
+    for(let i = 0; i < pages.length; i++){
+      const pageEl = pdfPage(cols, pages[i].join(''), i + 1, pages.length);
+      document.body.appendChild(pageEl); stage.push(pageEl);
+      const canvas = await html2canvas(pageEl, { scale: 2, backgroundColor: '#ffffff', logging: false, width: PDF_W, height: PDF_H, windowWidth: PDF_W });
+      if(i > 0) doc.addPage();
+      doc.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, 297, 210);
+      pageEl.remove(); stage.pop();
     }
-  });
-  doc.save(exportName() + '.pdf');
+    doc.save(exportName() + '.pdf');
+  }catch(e){
+    console.error(e);
+    alert(t('exportFailed') + ' (' + (e.message || e) + ')');
+  }finally{
+    stage.forEach(el => el.remove());
+    btns.forEach((b, i) => { b.disabled = false; b.textContent = labels[i]; });
+  }
 }
 
 /* ====== INIT ====== */
