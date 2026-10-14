@@ -53,6 +53,7 @@
   h1,h2,h3{margin:0;font-weight:700;letter-spacing:-.01em;}
   a{color:inherit;}
   .num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum";}
+  .num,.margin-pill{direction:ltr;unicode-bidi:isolate;}   /* keep signs and units in order inside right-to-left Kurdish pages */
 
   .glass{
     background:var(--glass); backdrop-filter:blur(26px) saturate(180%); -webkit-backdrop-filter:blur(26px) saturate(180%);
@@ -140,6 +141,11 @@
   .margin-neg{background:var(--red-bg);color:var(--red-fg);}
 
   .export-row{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
+  .tab-sep{height:1px;background:var(--border-soft);margin:8px 4px;}
+  .pv-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  .pv-wrap table{min-width:560px;}
+  .pv-form-actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px;}
+  .pv-live{font-size:13px;color:var(--muted);margin:-4px 0 14px;}
 
   table{width:100%;border-collapse:collapse;font-size:13px;}
   th{text-align:inherit;color:var(--muted);font-weight:600;padding:9px 10px;border-bottom:1px solid var(--border-soft);white-space:nowrap;}
@@ -276,13 +282,73 @@
       <button class="secondary" id="cancel-edit" style="display:none;margin-inline-start:8px;" onclick="resetForm()" data-i18n="cancelEdit">Cancel edit</button>
     </div>
 
-    <div class="panel glass">
+    <div class="panel glass" id="tx-panel">
       <h3 data-i18n="transactions">Transactions</h3>
       <div class="export-row" id="export-row" style="display:none;">
         <button class="secondary" onclick="exportXlsx()" data-i18n="downloadXlsx">⬇ Download XLSX</button>
         <button class="secondary" onclick="exportPdf()" data-i18n="downloadPdf">⬇ Download PDF</button>
       </div>
       <div id="table-wrap"><div class="empty">Loading…</div></div>
+    </div>
+
+    <!-- ============ PRIVATE DESK (admin + HR only) ============ -->
+    <div id="private-view" style="display:none;">
+      <div class="export-row" id="private-export-row" style="display:none;">
+        <button class="secondary" onclick="exportPrivateXlsx()" data-i18n="downloadXlsx">⬇ Download XLSX</button>
+        <button class="secondary" onclick="exportPrivatePdf()" data-i18n="downloadPdf">⬇ Download PDF</button>
+      </div>
+
+      <div class="panel glass">
+        <h3 data-i18n="pvNotesTitle">Gold &amp; silver notes</h3>
+        <div class="subhead" style="margin-top:-8px;" data-i18n="pvNotesHint"></div>
+        <div class="pv-admin" id="pvn-form">
+          <input type="hidden" id="pvn-id">
+          <div class="form-grid">
+            <div><label data-i18n="date">Date</label><input type="date" id="pvn-date"></div>
+            <div><label data-i18n="metal">Metal</label>
+              <select id="pvn-metal"><option value="silver" data-i18n="silver">Silver</option><option value="gold" data-i18n="gold">Gold</option></select></div>
+            <div><label data-i18n="direction">Direction</label>
+              <select id="pvn-dir"><option value="in" data-i18n="dirIn">In (received)</option><option value="out" data-i18n="dirOut">Out (given)</option></select></div>
+            <div><label data-i18n="kg">KG</label><input type="number" step="any" id="pvn-kg"></div>
+            <div class="full"><label data-i18n="notes">Notes</label><input type="text" id="pvn-notes"></div>
+          </div>
+          <div class="pv-form-actions">
+            <button onclick="submitPvNote()" data-i18n="save">Save</button>
+            <button class="secondary" id="pvn-cancel" style="display:none;" onclick="resetPvNote()" data-i18n="cancelEdit">Cancel edit</button>
+          </div>
+        </div>
+        <div class="computed-row" id="pvn-sum"></div>
+        <div class="pv-wrap" id="pvn-table"></div>
+      </div>
+
+      <div class="panel glass">
+        <h3 data-i18n="pvSwapTitle">Exchange: gold ⇄ silver</h3>
+        <div class="subhead" style="margin-top:-8px;" data-i18n="pvSwapHint"></div>
+        <div class="pv-admin" id="pvs-form">
+          <input type="hidden" id="pvs-id">
+          <div class="form-grid">
+            <div><label data-i18n="date">Date</label><input type="date" id="pvs-date"></div>
+            <div class="full-2" style="grid-column:span 2;"><label data-i18n="type">Type</label>
+              <select id="pvs-type" onchange="updatePvSwap()">
+                <option value="goldToSilver" data-i18n="swGoldToSilver">Convert gold → silver</option>
+                <option value="silverToGold" data-i18n="swSilverToGold">Convert silver → gold</option>
+                <option value="buyGoldWithSilver" data-i18n="swBuyGoldSilver">Buy gold with silver</option>
+                <option value="buySilverWithGold" data-i18n="swBuySilverGold">Buy silver with gold</option>
+              </select></div>
+            <div><label id="pvs-gave-label">Gave (KG)</label><input type="number" step="any" id="pvs-gave" oninput="updatePvSwap()"></div>
+            <div><label id="pvs-got-label">Received (KG)</label><input type="number" step="any" id="pvs-got" oninput="updatePvSwap()"></div>
+            <div><label data-i18n="party">Other side / name</label><input type="text" id="pvs-party"></div>
+            <div class="full"><label data-i18n="notes">Notes</label><input type="text" id="pvs-notes"></div>
+          </div>
+          <div class="pv-live num" id="pvs-live"></div>
+          <div class="pv-form-actions">
+            <button onclick="submitPvSwap()" data-i18n="save">Save</button>
+            <button class="secondary" id="pvs-cancel" style="display:none;" onclick="resetPvSwap()" data-i18n="cancelEdit">Cancel edit</button>
+          </div>
+        </div>
+        <div class="computed-row" id="pvs-sum"></div>
+        <div class="pv-wrap" id="pvs-table"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -348,9 +414,11 @@ function toEmail(username){ return String(username).trim().toLowerCase().replace
 function canBrowseAll(){ return !!session && (session.role === 'admin' || session.role === 'hr'); }
 function subText(){
   if(!session) return '';
+  if(viewingTab === 'PRIVATE') return t('privateSub');
   if(viewingTab === 'ALL') return session.role === 'hr' ? t('hrSub') : t('combinedSub');
   return session.role === 'admin' ? t('editableSub') : (session.role === 'hr' ? t('hrSub') : t('viewOnlySub'));
 }
+function viewTitle(){ return viewingTab === 'ALL' ? t('combinedTitle') : viewingTab === 'PRIVATE' ? t('privateDesk') : viewingTab; }
 function fmtMoney(n){ return '$' + round2(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); }
 function round2(n){ return Math.round((Number(n)||0) * 100) / 100; }
 function fmtSigned(n){ const v = round2(n); return (v >= 0 ? '+' : '-') + '$' + Math.abs(v).toFixed(2); }
@@ -394,6 +462,17 @@ const I18N = {
     plKg: 'P/L × KG', colPlKg: 'P/L × KG', netProfit: 'Net profit (per KG left in shop)', netProfitClosed: 'Profit on completed buy & sell (without remaining KG)', netProfitOpen: 'Profit on remaining KG only', toSell: 'left to sell', toBuy: 'left to buy back',
     roleLabel: 'Role', roleEmployee: 'Employee (own tab, view only)', roleHr: 'HR (view & download everything, no editing)', hrSub: 'View and download only — HR cannot add or change data.',
     exportFailed: 'Could not create the PDF.',
+    privateDesk: 'Private desk', privateSub: 'Only admins and HR can see this section. Nothing here is counted in the main accounts.',
+    pvNotesTitle: 'Gold & silver notes (no price)', pvNotesHint: 'Record quantities only, as a note. These are not counted in any account.',
+    metal: 'Metal', silver: 'Silver', gold: 'Gold', direction: 'Direction', dirIn: 'In (received)', dirOut: 'Out (given)',
+    colMetal: 'Metal', colDirection: 'Direction', pvIn: 'in', pvOut: 'out', pvBalance: 'balance',
+    pvSwapTitle: 'Exchange: gold ⇄ silver', pvSwapHint: 'Convert or buy one metal with the other. Kept separate from the main accounts.',
+    swGoldToSilver: 'Convert gold → silver', swSilverToGold: 'Convert silver → gold', swBuyGoldSilver: 'Buy gold with silver', swBuySilverGold: 'Buy silver with gold',
+    gaveLabel: 'Gave (KG)', gotLabel: 'Received (KG)', party: 'Other side / name', colGave: 'Gave', colGot: 'Received', colXRate: 'Received per 1 KG given',
+    pvGiven: 'given', pvReceived: 'received', pvChange: 'change', pvCount: 'Exchanges', pvEmpty: 'No entries in this range.',
+    pvFillNote: 'Fill in date and KG.', pvFillSwap: 'Fill in date, KG given and KG received.',
+    pvLoadError: 'Could not load the private desk. Publish the updated Firestore rules (firestore.rules) and try again.',
+    pvRatePer: 'per 1 KG given',
     addKgAllowance: '+ Add KG allowance', grantType: 'Silver type', grantSuly: 'Suly', grantBuzan: 'Buzan',
     addEmployee: '+ Add employee', save: 'Save', cancel: 'Cancel', fillAllFields: 'Fill in all fields.',
     downloadXlsx: '⬇ Download XLSX', downloadPdf: '⬇ Download PDF', setupAlreadyDone: 'An admin account already exists — sign in instead.'
@@ -428,6 +507,17 @@ const I18N = {
     plKg: 'قازانج/زیان × کیلۆ', colPlKg: 'قازانج/زیان × کیلۆ', netProfit: 'قازانجی ڕاستەقینە (بۆ هەر کیلۆی ماوە لە دووکان)', netProfitClosed: 'قازانجی کڕین و فرۆشتنی تەواوبوو (بەبێ کیلۆی ماوە)', netProfitOpen: 'قازانجی تەنها ئەو کیلۆیانەی ماونەتەوە', toSell: 'ماوە بۆ فرۆشتن', toBuy: 'ماوە بۆ کڕین',
     roleLabel: 'ڕۆڵ', roleEmployee: 'کارمەند (تەنها لاپەڕەی خۆی، تەنها بینین)', roleHr: 'سەرچاوە مرۆییەکان (بینین و داگرتنی هەموو شتێک، بێ دەستکاری)', hrSub: 'تەنها بینین و داگرتن — سەرچاوە مرۆییەکان ناتوانن زانیاری زیاد بکەن یان بیگۆڕن.',
     exportFailed: 'نەتوانرا PDF دروست بکرێت.',
+    privateDesk: 'مێزی تایبەت', privateSub: 'تەنها بەڕێوەبەر و سەرچاوە مرۆییەکان ئەم بەشە دەبینن. هیچ شتێک لێرە ناخرێتە ناو هەژمارە سەرەکییەکان.',
+    pvNotesTitle: 'تێبینیی زێڕ و زیو (بێ نرخ)', pvNotesHint: 'تەنها بڕەکە وەک تێبینی تۆمار بکە. لە هیچ هەژمارێکدا ناژمێردرێت.',
+    metal: 'کانزا', silver: 'زیو', gold: 'زێڕ', direction: 'ئاڕاستە', dirIn: 'هاتوو (وەرگیراو)', dirOut: 'چوو (دراو)',
+    colMetal: 'کانزا', colDirection: 'ئاڕاستە', pvIn: 'هاتوو', pvOut: 'چوو', pvBalance: 'ماوە',
+    pvSwapTitle: 'ئاڵوگۆڕ: زێڕ ⇄ زیو', pvSwapHint: 'گۆڕین یان کڕینی یەکێک لەم کانزایانە بە ئەوی تر. لە هەژمارە سەرەکییەکان جیایە.',
+    swGoldToSilver: 'گۆڕینی زێڕ بۆ زیو', swSilverToGold: 'گۆڕینی زیو بۆ زێڕ', swBuyGoldSilver: 'کڕینی زێڕ بە زیو', swBuySilverGold: 'کڕینی زیو بە زێڕ',
+    gaveLabel: 'دراو (کیلۆ)', gotLabel: 'وەرگیراو (کیلۆ)', party: 'لایەنی بەرانبەر / ناو', colGave: 'دراو', colGot: 'وەرگیراو', colXRate: 'وەرگیراو بۆ هەر ١ کیلۆی دراو',
+    pvGiven: 'دراو', pvReceived: 'وەرگیراو', pvChange: 'گۆڕان', pvCount: 'ژمارەی ئاڵوگۆڕەکان', pvEmpty: 'هیچ تۆمارێک لەم ماوەیەدا نییە.',
+    pvFillNote: 'بەروار و کیلۆ پڕبکەرەوە.', pvFillSwap: 'بەروار، کیلۆی دراو و کیلۆی وەرگیراو پڕبکەرەوە.',
+    pvLoadError: 'نەتوانرا مێزی تایبەت بار بکرێت. سەرەتا ڕێساکانی نوێی Firestore (firestore.rules) بڵاوبکەرەوە و دووبارە هەوڵبدەرەوە.',
+    pvRatePer: 'بۆ هەر ١ کیلۆی دراو',
     addKgAllowance: '+ زیادکردنی بڕی کیلۆ', grantType: 'جۆری زیو', grantSuly: 'سلێمانی', grantBuzan: 'بوزان',
     addEmployee: '+ زیادکردنی کارمەند', save: 'پاشەکەوتکردن', cancel: 'هەڵوەشاندنەوە', fillAllFields: 'هەموو خانەکان پڕبکەرەوە.',
     downloadXlsx: '⬇ داگرتنی XLSX', downloadPdf: '⬇ داگرتنی PDF', setupAlreadyDone: 'هەژماری بەڕێوەبەر پێشتر دروستکراوە — بچۆ ژوورەوە.'
@@ -452,9 +542,10 @@ function setLang(lang){
   applyStaticTranslations();
   if(session){
     document.getElementById('viewing-sub').textContent = subText();
-    if(viewingTab === 'ALL') document.getElementById('viewing-title').textContent = t('combinedTitle');
+    document.getElementById('viewing-title').textContent = viewTitle();
     buildSidebar();
     renderAll();
+    if(viewingTab === 'PRIVATE'){ renderPrivate(); updatePvSwap(); }
   }
 }
 
@@ -486,6 +577,8 @@ async function doLogin(){
 
 function signOut(){
   if(unsubscribe){ unsubscribe(); unsubscribe = null; }
+  if(privateUnsub){ privateUnsub(); privateUnsub = null; }
+  subscribedTab = null; allRecords = []; currentRecords = []; privateRecords = []; employees = [];
   auth.signOut();
   session = null;
   document.getElementById('app').classList.remove('active');
@@ -611,7 +704,7 @@ async function enterApp(){
   document.getElementById('add-employee-link').style.display = session.role === 'admin' ? 'block' : 'none';
   viewingTab = session.role === 'hr' ? 'ALL' : session.tabName;
   document.getElementById('entry-panel').style.display = (session.role === 'admin') ? 'block' : 'none';
-  document.getElementById('viewing-title').textContent = viewingTab === 'ALL' ? t('combinedTitle') : viewingTab;
+  document.getElementById('viewing-title').textContent = viewTitle();
   document.getElementById('viewing-sub').textContent = subText();
   await buildSidebar();
   document.getElementById('f-date').valueAsDate = new Date();
@@ -642,6 +735,13 @@ async function buildSidebar(){
       list.appendChild(b);
       addSelectOption(select, emp.tabName, emp.fullName);
     });
+    const sep = document.createElement('div'); sep.className = 'tab-sep'; list.appendChild(sep);
+    const pvBtn = document.createElement('button');
+    pvBtn.className = 'tab-btn' + (viewingTab === 'PRIVATE' ? ' active' : '');
+    pvBtn.textContent = '🔒 ' + t('privateDesk');
+    pvBtn.onclick = (ev) => switchTab('PRIVATE', ev.target);
+    list.appendChild(pvBtn);
+    addSelectOption(select, 'PRIVATE', '🔒 ' + t('privateDesk'));
     select.value = viewingTab;
   } else {
     const b = document.createElement('button');
@@ -666,9 +766,9 @@ function switchTab(tabName, btnEl){
   if(btnEl) btnEl.classList.add('active');
   const select = document.getElementById('tab-select');
   if(select.value !== tabName) select.value = tabName;
-  const canEdit = (tabName !== 'ALL') && session.role === 'admin';
+  const canEdit = (tabName !== 'ALL' && tabName !== 'PRIVATE') && session.role === 'admin';
   document.getElementById('entry-panel').style.display = canEdit ? 'block' : 'none';
-  document.getElementById('viewing-title').textContent = tabName === 'ALL' ? t('combinedTitle') : tabName;
+  document.getElementById('viewing-title').textContent = viewTitle();
   document.getElementById('viewing-sub').textContent = subText();
   loadData();
 }
@@ -706,6 +806,8 @@ let allRecords = [];
 let subscribedTab = null;
 
 function loadData(){
+  if(viewingTab === 'PRIVATE'){ showPrivate(true); loadPrivate(); return; }
+  showPrivate(false);
   if(subscribedTab === viewingTab){ applyRangeFilter(); return; }
   if(unsubscribe){ unsubscribe(); unsubscribe = null; }
   subscribedTab = viewingTab;
@@ -972,8 +1074,12 @@ function resetForm(){
 const EXPORT_COLS = [ // [data key, i18n key for the column title]
   ['Employee','colEmployee'], ['Date','date'], ['Type','colType'], ['KG','colKg'], ['Customer','colCustomer'],
   ['Rate','colRate'], ['Price/KG','colPrice'], ['Ounce','colOunce'], ['Market $/KG','colMarket'],
-  ['Margin','colMargin'], ['P/L x KG','colPlKg'], ['Total','colTotal'], ['Entered by','colEnteredBy'], ['Notes','notes']
+  ['Margin','colMargin'], ['P/L x KG','colPlKg'], ['Total','colTotal'], ['Entered by','colEnteredBy'], ['Notes','notes'],
+  // private desk
+  ['Metal','colMetal'], ['Direction','colDirection'], ['PKG','colKg'], ['Gave','colGave'], ['Gave KG','gaveLabel'],
+  ['Got','colGot'], ['Got KG','gotLabel'], ['XRate','colXRate'], ['Party','party']
 ];
+const KG3_COLS = ['PKG','Gave KG','Got KG'];   // private-desk quantities keep 3 decimals (gold can be fractions of a kg)
 const SIGNED_COLS = ['Margin','P/L x KG'];
 function exportLabel(key){ const d = EXPORT_COLS.find(c => c[0] === key); return d ? t(d[1]) : key; }
 function esc(x){ return String(x == null ? '' : x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -1003,9 +1109,7 @@ function exportRows(){
 function exportName(){ return (viewingTab === 'ALL' ? 'All_employees' : viewingTab) + '_' + ymd(new Date()); }
 function exportTitle(){ return (viewingTab === 'ALL' ? t('allEmployees') : viewingTab) + ' — ' + t('transactions'); }
 
-function exportXlsx(){
-  const rows = exportRows();
-  if(!rows.length) return;
+function sheetFromRows(rows){
   const ws = XLSX.utils.json_to_sheet(rows);
   const cols = Object.keys(rows[0]);
   XLSX.utils.sheet_add_aoa(ws, [cols.map(exportLabel)], { origin: 'A1' });   // column titles in the current language
@@ -1014,12 +1118,21 @@ function exportXlsx(){
     if(!cell || cell.t !== 'n') return;
     if(SIGNED_COLS.indexOf(c) !== -1) cell.z = '[Color10]+0.00;[Red]-0.00;0.00'; // green +, red -
     else if(c === 'Rate') cell.z = '0.000';
+    else if(c === 'XRate') cell.z = '0.0000';
+    else if(KG3_COLS.indexOf(c) !== -1) cell.z = '0.000';
     else cell.z = '0.00';
   }));
+  ws['!cols'] = cols.map(c => ({ wch: (c === 'Notes' || c === 'Type') ? 28 : 14 }));
+  return ws;
+}
+function safeSheetName(n){ return String(n).replace(/[\\\/\?\*\[\]:]/g,' ').substring(0,31); }
+
+function exportXlsx(){
+  const rows = exportRows();
+  if(!rows.length) return;
   const wb = XLSX.utils.book_new();
   wb.Workbook = { Views: [{ RTL: LANG === 'ckb' }] };                          // right-to-left sheet for Kurdish
-  const sheetName = (viewingTab === 'ALL' ? t('allEmployees') : viewingTab).replace(/[\\\/\?\*\[\]:]/g,' ').substring(0,31);
-  XLSX.utils.book_append_sheet(wb, ws, sheetName);
+  XLSX.utils.book_append_sheet(wb, sheetFromRows(rows), safeSheetName(viewingTab === 'ALL' ? t('allEmployees') : viewingTab));
   XLSX.writeFile(wb, exportName() + '.xlsx');
 }
 
@@ -1044,7 +1157,8 @@ const PDF_CSS =
   '.pdf-page .pdf-foot{position:absolute;bottom:12px;left:30px;right:30px;font-size:10px;color:#888;text-align:center;}';
 
 const PDF_COL_W = { 'Employee':7.5, 'Date':7, 'Type':15, 'KG':4.5, 'Customer':9, 'Rate':5, 'Price/KG':6, 'Ounce':4,
-  'Market $/KG':6.5, 'Margin':6, 'P/L x KG':7, 'Total':7.5, 'Entered by':11.5, 'Notes':9 };
+  'Market $/KG':6.5, 'Margin':6, 'P/L x KG':7, 'Total':7.5, 'Entered by':11.5, 'Notes':9,
+  'Metal':8, 'Direction':11, 'PKG':8, 'Gave':8, 'Gave KG':8, 'Got':8, 'Got KG':8, 'XRate':10, 'Party':14 };
 function ltrSpan(x){ return '<span dir="ltr">'+esc(x)+'</span>'; }
 function cleanRate(v){ return String(+Number(v).toFixed(3)); }   // 60.739999999999995 -> 60.74
 
@@ -1053,72 +1167,76 @@ function pdfCell(col, v){
   if(typeof v === 'number'){
     if(SIGNED_COLS.indexOf(col) !== -1){ const pos = v >= 0; return '<td class="n '+(pos?'pos':'neg')+'" dir="ltr">'+(pos?'+':'-')+num2(Math.abs(v))+'</td>'; }
     if(col === 'Rate') return '<td class="n" dir="ltr">'+cleanRate(v)+'</td>';
+    if(col === 'XRate') return '<td class="n" dir="ltr">'+v.toFixed(4)+'</td>';
+    if(KG3_COLS.indexOf(col) !== -1) return '<td class="n" dir="ltr">'+v.toFixed(3)+'</td>';
     return '<td class="n" dir="ltr">'+num2(v)+'</td>';
   }
   return '<td dir="auto">'+esc(v)+'</td>';
 }
-function pdfPage(cols, rowsHtml, pageNo, pageCount, extraClass){
+function pdfPage(cols, rowsHtml, pageNo, pageCount, extraClass, titleHtml, widths){
   const rtl = LANG === 'ckb';
+  const W = Object.assign({}, PDF_COL_W, widths || {});
   const from = document.getElementById('range-from').value, to = document.getElementById('range-to').value;
   const range = (!from && !to) ? t('allTime') : ((from || '…') + '  →  ' + (to || '…'));
-  const totalW = cols.reduce((a, c) => a + (PDF_COL_W[c] || 8), 0);
-  const colgroup = '<colgroup>' + cols.map(c => '<col style="width:' + ((PDF_COL_W[c] || 8) * 100 / totalW).toFixed(2) + '%">').join('') + '</colgroup>';
-  const titleName = viewingTab === 'ALL' ? esc(t('allEmployees')) : '<bdi>' + esc(viewingTab) + '</bdi>';
+  const totalW = cols.reduce((a, c) => a + (W[c] || 8), 0);
+  const colgroup = '<colgroup>' + cols.map(c => '<col style="width:' + ((W[c] || 8) * 100 / totalW).toFixed(2) + '%">').join('') + '</colgroup>';
   const el = document.createElement('div');
   el.className = 'pdf-page' + (extraClass ? ' ' + extraClass : '');
   el.setAttribute('dir', rtl ? 'rtl' : 'ltr');
   el.innerHTML =
     '<style>'+PDF_CSS+'</style>'+
-    '<div class="pdf-title"><div class="t1">'+titleName+' — '+esc(t('transactions'))+'</div><div class="t2">'+ltrSpan(range)+'  ·  '+ltrSpan(ymd(new Date()))+'</div></div>'+
+    '<div class="pdf-title"><div class="t1">'+titleHtml+'</div><div class="t2">'+ltrSpan(range)+'  ·  '+ltrSpan(ymd(new Date()))+'</div></div>'+
     '<table>'+colgroup+'<thead><tr>'+cols.map(c => '<th>'+esc(exportLabel(c))+'</th>').join('')+'</tr></thead><tbody>'+rowsHtml+'</tbody></table>'+
     (pageCount ? '<div class="pdf-foot" dir="ltr">'+pageNo+' / '+pageCount+'</div>' : '');
   return el;
 }
 
-async function exportPdf(){
-  const rows = exportRows();
-  if(!rows.length) return;
-  const btns = Array.from(document.querySelectorAll('#export-row button'));
+// sections: [{ titleHtml, rows:[{col:value}], widths? }] — one table per section, pages numbered across the whole file
+async function generatePdf(btnSel, sections, fileName){
+  const btns = Array.from(document.querySelectorAll(btnSel));
   const labels = btns.map(b => b.textContent);
   btns.forEach(b => { b.disabled = true; b.textContent = '…'; });
   const stage = [];
   try{
-    const cols = Object.keys(rows[0]);
-    const rowHtml = rows.map(r => '<tr>' + cols.map(c => pdfCell(c, r[c])).join('') + '</tr>');
-
     // make sure the Arabic-script font is actually loaded before anything is measured or drawn
     try{ await document.fonts.load('400 12px "Noto Sans Arabic"', 'ڕێنووس کوردی سۆرانی ابج'); await document.fonts.load('700 12px "Noto Sans Arabic"', 'ڕێنووس ابج'); }catch(_){}
     await document.fonts.ready;
 
     // 1) measure every row once so pages are filled without cutting a row in half
-    const probe = pdfPage(cols, rowHtml.join(''), 0, 0, 'measure');
-    document.body.appendChild(probe); stage.push(probe);
-    const rowEls = Array.from(probe.querySelectorAll('tbody tr'));
-    const rowH = rowEls.map(tr => tr.getBoundingClientRect().height);
-    const headH = probe.querySelector('thead').getBoundingClientRect().height;
-    const titleH = probe.querySelector('.pdf-title').getBoundingClientRect().height + 10;
-    const capacity = PDF_H - 26*2 - titleH - headH - 22;       // room left for body rows on one page
-    probe.remove(); stage.pop();
-
-    const pages = []; let cur = [], used = 0;
-    rowH.forEach((h, i) => {
-      if(cur.length && used + h > capacity){ pages.push(cur); cur = []; used = 0; }
-      cur.push(rowHtml[i]); used += h;
-    });
-    if(cur.length) pages.push(cur);
+    const allPages = [];
+    for(const sec of sections){
+      if(!sec.rows.length) continue;
+      const cols = Object.keys(sec.rows[0]);
+      const rowHtml = sec.rows.map(r => '<tr>' + cols.map(c => pdfCell(c, r[c])).join('') + '</tr>');
+      const probe = pdfPage(cols, rowHtml.join(''), 0, 0, 'measure', sec.titleHtml, sec.widths);
+      document.body.appendChild(probe); stage.push(probe);
+      const rowH = Array.from(probe.querySelectorAll('tbody tr')).map(tr => tr.getBoundingClientRect().height);
+      const headH = probe.querySelector('thead').getBoundingClientRect().height;
+      const titleH = probe.querySelector('.pdf-title').getBoundingClientRect().height + 10;
+      const capacity = PDF_H - 26*2 - titleH - headH - 22;       // room left for body rows on one page
+      probe.remove(); stage.pop();
+      let cur = [], used = 0;
+      rowH.forEach((h, i) => {
+        if(cur.length && used + h > capacity){ allPages.push({ sec, cols, rows: cur }); cur = []; used = 0; }
+        cur.push(rowHtml[i]); used += h;
+      });
+      if(cur.length) allPages.push({ sec, cols, rows: cur });
+    }
+    if(!allPages.length) return;
 
     // 2) draw each page with the browser and drop it into the PDF
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4', compress: true });
-    for(let i = 0; i < pages.length; i++){
-      const pageEl = pdfPage(cols, pages[i].join(''), i + 1, pages.length);
+    for(let i = 0; i < allPages.length; i++){
+      const pg = allPages[i];
+      const pageEl = pdfPage(pg.cols, pg.rows.join(''), i + 1, allPages.length, '', pg.sec.titleHtml, pg.sec.widths);
       document.body.appendChild(pageEl); stage.push(pageEl);
       const canvas = await html2canvas(pageEl, { scale: 2, backgroundColor: '#ffffff', logging: false, width: PDF_W, height: PDF_H, windowWidth: PDF_W });
       if(i > 0) doc.addPage();
       doc.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, 297, 210);
       pageEl.remove(); stage.pop();
     }
-    doc.save(exportName() + '.pdf');
+    doc.save(fileName + '.pdf');
   }catch(e){
     console.error(e);
     alert(t('exportFailed') + ' (' + (e.message || e) + ')');
@@ -1128,12 +1246,254 @@ async function exportPdf(){
   }
 }
 
+function exportPdf(){
+  const rows = exportRows();
+  if(!rows.length) return;
+  const nameHtml = viewingTab === 'ALL' ? esc(t('allEmployees')) : '<bdi>' + esc(viewingTab) + '</bdi>';
+  return generatePdf('#export-row button', [{ titleHtml: nameHtml + ' — ' + esc(t('transactions')), rows }], exportName());
+}
+
+/* ====================================================================
+   PRIVATE DESK — admin writes, HR reads, employees can't even load it (enforced by Firestore rules).
+   Collection "private": kind 'note' (silver/gold quantity, no price) or kind 'swap' (gold <-> silver exchange).
+   None of this feeds the main accounts.
+   ==================================================================== */
+let privateRecords = [], privateCurrent = [], privateUnsub = null;
+
+function showPrivate(on){
+  ['way-grid','balance-panel','tx-panel'].forEach(id => { document.getElementById(id).style.display = on ? 'none' : ''; });
+  if(on) document.getElementById('entry-panel').style.display = 'none';
+  document.getElementById('private-view').style.display = on ? 'block' : 'none';
+  if(on){
+    const admin = session && session.role === 'admin';
+    document.querySelectorAll('#private-view .pv-admin').forEach(el => { el.style.display = admin ? 'block' : 'none'; });
+  }
+}
+
+function loadPrivate(){
+  if(privateUnsub){ applyPrivateFilter(); return; }
+  document.getElementById('pvn-table').innerHTML = '<div class="empty">'+t('loading')+'</div>';
+  document.getElementById('pvs-table').innerHTML = '<div class="empty">'+t('loading')+'</div>';
+  document.getElementById('pvn-sum').innerHTML = ''; document.getElementById('pvs-sum').innerHTML = '';
+  if(!document.getElementById('pvn-date').value) resetPvNote();
+  if(!document.getElementById('pvs-date').value) resetPvSwap();
+  privateUnsub = db.collection('private').onSnapshot(snap => {
+    privateRecords = snap.docs.map(d => Object.assign({ id: d.id }, d.data()));
+    applyPrivateFilter();
+  }, err => {
+    console.error(err);
+    privateUnsub = null;
+    const msg = '<div class="empty">'+t('pvLoadError')+'</div>';
+    document.getElementById('pvn-table').innerHTML = msg; document.getElementById('pvs-table').innerHTML = msg;
+  });
+}
+
+function applyPrivateFilter(){
+  const from = document.getElementById('range-from').value;
+  const to = document.getElementById('range-to').value;
+  privateCurrent = privateRecords.filter(r => (!from || r.date >= from) && (!to || r.date <= to));
+  renderPrivate();
+}
+
+const SWAP_META = {
+  goldToSilver:      { gave:'gold',   got:'silver', key:'swGoldToSilver' },
+  silverToGold:      { gave:'silver', got:'gold',   key:'swSilverToGold' },
+  buyGoldWithSilver: { gave:'silver', got:'gold',   key:'swBuyGoldSilver' },
+  buySilverWithGold: { gave:'gold',   got:'silver', key:'swBuySilverGold' }
+};
+function metalName(m){ return t(m === 'gold' ? 'gold' : 'silver'); }
+function r3(n){ return Math.round((Number(n)||0) * 1000) / 1000; }
+function fmtKg(n){ return r3(n).toFixed(3) + ' kg'; }
+function kgPill(n){ const v = r3(n); return '<span class="margin-pill '+(v >= 0 ? 'margin-pos' : 'margin-neg')+'">'+(v >= 0 ? '+' : '-')+Math.abs(v).toFixed(3)+' kg</span>'; }
+function pvSort(a, b){ return a.date === b.date ? tsMillis(a) - tsMillis(b) : (a.date < b.date ? 1 : -1); }
+function sumCell(label, valueHtml){ return '<div>'+label+'<span class="num">'+valueHtml+'</span></div>'; }
+
+function pvActions(r){
+  if(!session || session.role !== 'admin') return '';
+  return '<td class="row-actions"><button class="secondary" data-pv-edit="'+r.id+'">'+t('edit')+'</button><button class="danger" data-pv-del="'+r.id+'">'+t('delete')+'</button></td>';
+}
+
+function renderPrivate(){
+  if(!session) return;
+  const admin = session.role === 'admin';
+  const notes = privateCurrent.filter(r => r.kind === 'note').sort(pvSort);
+  const swaps = privateCurrent.filter(r => r.kind === 'swap').sort(pvSort);
+  document.getElementById('private-export-row').style.display = (notes.length || swaps.length) ? 'flex' : 'none';
+
+  // ---- notes ----
+  const m = { silver:{ in:0, out:0 }, gold:{ in:0, out:0 } };
+  notes.forEach(r => { const k = r.metal === 'gold' ? 'gold' : 'silver'; m[k][r.direction === 'out' ? 'out' : 'in'] += Number(r.kg) || 0; });
+  document.getElementById('pvn-sum').innerHTML = ['silver','gold'].map(k =>
+    sumCell(metalName(k)+' · '+t('pvIn'), fmtKg(m[k].in)) +
+    sumCell(metalName(k)+' · '+t('pvOut'), fmtKg(m[k].out)) +
+    sumCell(metalName(k)+' · '+t('pvBalance'), kgPill(m[k].in - m[k].out))
+  ).join('');
+  if(!notes.length){ document.getElementById('pvn-table').innerHTML = '<div class="empty">'+t('pvEmpty')+'</div>'; }
+  else {
+    let h = '<table><thead><tr><th>'+t('date')+'</th><th>'+t('colMetal')+'</th><th>'+t('colDirection')+'</th><th>'+t('colKg')+'</th><th>'+t('notes')+'</th><th>'+t('colEnteredBy')+'</th>'+(admin?'<th></th>':'')+'</tr></thead><tbody>';
+    notes.forEach(r => {
+      const out = r.direction === 'out';
+      h += '<tr><td class="num">'+esc(r.date)+'</td><td>'+metalName(r.metal)+'</td>'+
+        '<td><span class="margin-pill '+(out?'margin-neg':'margin-pos')+'">'+t(out?'dirOut':'dirIn')+'</span></td>'+
+        '<td class="num">'+fmtKg(r.kg)+'</td><td style="white-space:normal;min-width:140px;">'+esc(r.notes)+'</td><td>'+esc(r.enteredBy)+'</td>'+pvActions(r)+'</tr>';
+    });
+    document.getElementById('pvn-table').innerHTML = h + '</tbody></table>';
+  }
+
+  // ---- swaps ----
+  const tot = { gold:{ gave:0, got:0 }, silver:{ gave:0, got:0 } };
+  swaps.forEach(r => {
+    const meta = SWAP_META[r.swapType]; if(!meta) return;
+    tot[meta.gave].gave += Number(r.gaveKg) || 0; tot[meta.got].got += Number(r.gotKg) || 0;
+  });
+  document.getElementById('pvs-sum').innerHTML = sumCell(t('pvCount'), String(swaps.length)) +
+    ['gold','silver'].map(k =>
+      sumCell(metalName(k)+' · '+t('pvGiven'), fmtKg(tot[k].gave)) +
+      sumCell(metalName(k)+' · '+t('pvReceived'), fmtKg(tot[k].got)) +
+      sumCell(metalName(k)+' · '+t('pvChange'), kgPill(tot[k].got - tot[k].gave))
+    ).join('');
+  if(!swaps.length){ document.getElementById('pvs-table').innerHTML = '<div class="empty">'+t('pvEmpty')+'</div>'; }
+  else {
+    let h = '<table><thead><tr><th>'+t('date')+'</th><th>'+t('colType')+'</th><th>'+t('colGave')+'</th><th>'+t('colGot')+'</th><th>'+t('colXRate')+'</th><th>'+t('party')+'</th><th>'+t('notes')+'</th><th>'+t('colEnteredBy')+'</th>'+(admin?'<th></th>':'')+'</tr></thead><tbody>';
+    swaps.forEach(r => {
+      const meta = SWAP_META[r.swapType] || SWAP_META.goldToSilver;
+      const rate = Number(r.gaveKg) ? Number(r.gotKg) / Number(r.gaveKg) : 0;
+      h += '<tr><td class="num">'+esc(r.date)+'</td><td>'+t(meta.key)+'</td>'+
+        '<td class="num"><span class="margin-pill margin-neg">-'+r3(r.gaveKg).toFixed(3)+' kg</span> '+metalName(meta.gave)+'</td>'+
+        '<td class="num"><span class="margin-pill margin-pos">+'+r3(r.gotKg).toFixed(3)+' kg</span> '+metalName(meta.got)+'</td>'+
+        '<td class="num">'+rate.toFixed(4)+'</td><td>'+esc(r.party)+'</td><td style="white-space:normal;min-width:120px;">'+esc(r.notes)+'</td><td>'+esc(r.enteredBy)+'</td>'+pvActions(r)+'</tr>';
+    });
+    document.getElementById('pvs-table').innerHTML = h + '</tbody></table>';
+  }
+  updatePvSwap();
+}
+
+/* ---- note form ---- */
+function resetPvNote(){
+  document.getElementById('pvn-id').value = '';
+  document.getElementById('pvn-date').valueAsDate = new Date();
+  document.getElementById('pvn-metal').value = 'silver';
+  document.getElementById('pvn-dir').value = 'in';
+  document.getElementById('pvn-kg').value = '';
+  document.getElementById('pvn-notes').value = '';
+  document.getElementById('pvn-cancel').style.display = 'none';
+}
+async function submitPvNote(){
+  const id = document.getElementById('pvn-id').value;
+  const date = document.getElementById('pvn-date').value;
+  const kg = parseFloat(document.getElementById('pvn-kg').value);
+  if(!date || !(kg > 0)){ alert(t('pvFillNote')); return; }
+  const data = { kind:'note', date, metal: document.getElementById('pvn-metal').value, direction: document.getElementById('pvn-dir').value,
+    kg, notes: document.getElementById('pvn-notes').value, enteredBy: session.fullName, timestamp: firebase.firestore.FieldValue.serverTimestamp() };
+  try{
+    if(id) await db.collection('private').doc(id).set(data, { merge: true }); else await db.collection('private').add(data);
+    resetPvNote();
+  }catch(e){ alert(t('couldNotSave') + ' (' + e.message + ')'); }
+}
+
+/* ---- exchange form ---- */
+function updatePvSwap(){
+  const meta = SWAP_META[document.getElementById('pvs-type').value];
+  document.getElementById('pvs-gave-label').textContent = t('gaveLabel') + ' · ' + metalName(meta.gave);
+  document.getElementById('pvs-got-label').textContent = t('gotLabel') + ' · ' + metalName(meta.got);
+  const gave = parseFloat(document.getElementById('pvs-gave').value) || 0, got = parseFloat(document.getElementById('pvs-got').value) || 0;
+  document.getElementById('pvs-live').textContent = (gave > 0 && got > 0) ? ('1 kg ' + metalName(meta.gave) + ' = ' + (got / gave).toFixed(4) + ' kg ' + metalName(meta.got)) : '';
+}
+function resetPvSwap(){
+  document.getElementById('pvs-id').value = '';
+  document.getElementById('pvs-date').valueAsDate = new Date();
+  document.getElementById('pvs-type').value = 'goldToSilver';
+  document.getElementById('pvs-gave').value = ''; document.getElementById('pvs-got').value = '';
+  document.getElementById('pvs-party').value = ''; document.getElementById('pvs-notes').value = '';
+  document.getElementById('pvs-cancel').style.display = 'none';
+  updatePvSwap();
+}
+async function submitPvSwap(){
+  const id = document.getElementById('pvs-id').value;
+  const date = document.getElementById('pvs-date').value;
+  const swapType = document.getElementById('pvs-type').value;
+  const gaveKg = parseFloat(document.getElementById('pvs-gave').value), gotKg = parseFloat(document.getElementById('pvs-got').value);
+  if(!date || !(gaveKg > 0) || !(gotKg > 0)){ alert(t('pvFillSwap')); return; }
+  const meta = SWAP_META[swapType];
+  const data = { kind:'swap', date, swapType, gaveMetal: meta.gave, gotMetal: meta.got, gaveKg, gotKg,
+    party: document.getElementById('pvs-party').value, notes: document.getElementById('pvs-notes').value,
+    enteredBy: session.fullName, timestamp: firebase.firestore.FieldValue.serverTimestamp() };
+  try{
+    if(id) await db.collection('private').doc(id).set(data, { merge: true }); else await db.collection('private').add(data);
+    resetPvSwap();
+  }catch(e){ alert(t('couldNotSave') + ' (' + e.message + ')'); }
+}
+
+function editPv(id){
+  const r = privateRecords.find(x => x.id === id); if(!r) return;
+  if(r.kind === 'note'){
+    document.getElementById('pvn-id').value = r.id; document.getElementById('pvn-date').value = r.date;
+    document.getElementById('pvn-metal').value = r.metal; document.getElementById('pvn-dir').value = r.direction;
+    document.getElementById('pvn-kg').value = r.kg; document.getElementById('pvn-notes').value = r.notes || '';
+    document.getElementById('pvn-cancel').style.display = 'inline-block';
+    document.getElementById('pvn-form').scrollIntoView({ behavior:'smooth', block:'center' });
+  } else {
+    document.getElementById('pvs-id').value = r.id; document.getElementById('pvs-date').value = r.date;
+    document.getElementById('pvs-type').value = r.swapType;
+    document.getElementById('pvs-gave').value = r.gaveKg; document.getElementById('pvs-got').value = r.gotKg;
+    document.getElementById('pvs-party').value = r.party || ''; document.getElementById('pvs-notes').value = r.notes || '';
+    document.getElementById('pvs-cancel').style.display = 'inline-block';
+    updatePvSwap();
+    document.getElementById('pvs-form').scrollIntoView({ behavior:'smooth', block:'center' });
+  }
+}
+async function removePv(id){
+  if(!confirm(t('confirmDelete'))) return;
+  try{ await db.collection('private').doc(id).delete(); }
+  catch(e){ alert(t('couldNotDelete') + ' (' + e.message + ')'); }
+}
+
+/* ---- private exports ---- */
+function pvNoteRows(){
+  return privateCurrent.filter(r => r.kind === 'note').sort(pvSort).map(r => ({
+    'Date': r.date, 'Metal': metalName(r.metal), 'Direction': t(r.direction === 'out' ? 'dirOut' : 'dirIn'),
+    'PKG': r3(r.kg), 'Notes': r.notes || '', 'Entered by': r.enteredBy || ''
+  }));
+}
+function pvSwapRows(){
+  return privateCurrent.filter(r => r.kind === 'swap').sort(pvSort).map(r => {
+    const meta = SWAP_META[r.swapType] || SWAP_META.goldToSilver;
+    return { 'Date': r.date, 'Type': t(meta.key), 'Gave': metalName(meta.gave), 'Gave KG': r3(r.gaveKg),
+      'Got': metalName(meta.got), 'Got KG': r3(r.gotKg), 'XRate': Number(r.gaveKg) ? Number(r.gotKg) / Number(r.gaveKg) : 0,
+      'Party': r.party || '', 'Notes': r.notes || '', 'Entered by': r.enteredBy || '' };
+  });
+}
+function privateName(){ return 'Private_desk_' + ymd(new Date()); }
+function exportPrivateXlsx(){
+  const n = pvNoteRows(), sw = pvSwapRows();
+  if(!n.length && !sw.length) return;
+  const wb = XLSX.utils.book_new();
+  wb.Workbook = { Views: [{ RTL: LANG === 'ckb' }] };
+  if(n.length) XLSX.utils.book_append_sheet(wb, sheetFromRows(n), safeSheetName(t('pvNotesTitle')));
+  if(sw.length) XLSX.utils.book_append_sheet(wb, sheetFromRows(sw), safeSheetName(t('pvSwapTitle')));
+  XLSX.writeFile(wb, privateName() + '.xlsx');
+}
+function exportPrivatePdf(){
+  const n = pvNoteRows(), sw = pvSwapRows();
+  if(!n.length && !sw.length) return;
+  const head = esc(t('privateDesk')) + ' — ';
+  return generatePdf('#private-export-row button', [
+    { titleHtml: head + esc(t('pvNotesTitle')), rows: n, widths: { 'Notes': 30, 'Date': 9 } },
+    { titleHtml: head + esc(t('pvSwapTitle')), rows: sw, widths: { 'Notes': 14, 'Type': 14, 'Date': 8 } }
+  ], privateName());
+}
+
 /* ====== INIT ====== */
 document.getElementById('table-wrap').addEventListener('click', (e)=>{
   const editId = e.target.getAttribute('data-edit-id');
   const delId = e.target.getAttribute('data-delete-id');
   if(editId) editRecord(editId);
   if(delId) removeRecord(delId);
+});
+document.getElementById('private-view').addEventListener('click', (e)=>{
+  const ed = e.target.getAttribute('data-pv-edit'), del = e.target.getAttribute('data-pv-del');
+  if(ed) editPv(ed);
+  if(del) removePv(del);
 });
 applyStaticTranslations();
 checkFirstRunSetup();
