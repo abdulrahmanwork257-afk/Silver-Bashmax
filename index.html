@@ -260,7 +260,7 @@
       <div class="form-grid">
         <div><label data-i18n="date">Date</label><input type="date" id="f-date"></div>
         <div><label data-i18n="type">Type</label>
-          <select id="f-type">
+          <select id="f-type" onchange="updateComputed()">
             <option value="Sell Suly / Buy Buzan" data-i18n="way1">Sell Suly / Buy Buzan</option>
             <option value="Buy Suly / Sell Buzan" data-i18n="way2">Buy Suly / Sell Buzan</option>
           </select>
@@ -418,6 +418,18 @@ function subText(){
   if(viewingTab === 'ALL') return session.role === 'hr' ? t('hrSub') : t('combinedSub');
   return session.role === 'admin' ? t('editableSub') : (session.role === 'hr' ? t('hrSub') : t('viewOnlySub'));
 }
+/* Margin = profit per KG on the pair of deals, always "what we got − what we paid":
+   Sell Suly / Buy Buzan:  sold to customer at our price, bought from Buzan at market  -> price − market
+   Buy Suly / Sell Buzan:  bought from customer at our price, sold to Buzan at market  -> market − price
+   Recomputed from the saved price + market price, so older saved records are corrected too. */
+function marginFor(type, price, market){
+  const d = (Number(price)||0) - (Number(market)||0);
+  return type === WAY2 ? -d : d;
+}
+function effMargin(r){
+  if(r.type === GRANT_SULY || r.type === GRANT_BUZAN) return 0;
+  return marginFor(r.type, r.negotiatedPrice, r.marketPrice);
+}
 function viewTitle(){ return viewingTab === 'ALL' ? t('combinedTitle') : viewingTab === 'PRIVATE' ? t('privateDesk') : viewingTab; }
 function fmtMoney(n){ return '$' + round2(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); }
 function round2(n){ return Math.round((Number(n)||0) * 100) / 100; }
@@ -505,9 +517,9 @@ const I18N = {
     colOunce: 'ئۆنس', colMarket: 'نرخی بازاڕ', colMargin: 'جیاوازی', colTotal: 'کۆی گشتی',
     colEnteredBy: 'تۆمارکراو لەلایەن', colEmployee: 'کارمەند', netDiff: 'دەرئەنجام', weightedAvg: 'تێکڕای نرخی باری کێشراو',
     plKg: 'قازانج/زیان × کیلۆ', colPlKg: 'قازانج/زیان × کیلۆ', netProfit: 'قازانجی ڕاستەقینە (بۆ هەر کیلۆی ماوە لە دووکان)', netProfitClosed: 'قازانجی کڕین و فرۆشتنی تەواوبوو (بەبێ کیلۆی ماوە)', netProfitOpen: 'قازانجی تەنها ئەو کیلۆیانەی ماونەتەوە', toSell: 'ماوە بۆ فرۆشتن', toBuy: 'ماوە بۆ کڕین',
-    roleLabel: 'ڕۆڵ', roleEmployee: 'کارمەند (تەنها لاپەڕەی خۆی، تەنها بینین)', roleHr: 'HR (بینین و داگرتنی هەموو شتێک، بێ دەستکاری)', hrSub: 'تەنها بینین و داگرتن — سەرچاوە مرۆییەکان ناتوانن زانیاری زیاد بکەن یان بیگۆڕن.',
+    roleLabel: 'ڕۆڵ', roleEmployee: 'کارمەند (تەنها لاپەڕەی خۆی، تەنها بینین)', roleHr: 'سەرچاوە مرۆییەکان (بینین و داگرتنی هەموو شتێک، بێ دەستکاری)', hrSub: 'تەنها بینین و داگرتن — سەرچاوە مرۆییەکان ناتوانن زانیاری زیاد بکەن یان بیگۆڕن.',
     exportFailed: 'نەتوانرا PDF دروست بکرێت.',
-    privateDesk: 'پەڕەی تایبەت', privateSub: 'تەنها بەڕێوەبەر و HR ئەم بەشە دەبینن. هیچ شتێک لێرە ناخرێتە ناو هەژمارە سەرەکییەکان.',
+    privateDesk: 'مێزی تایبەت', privateSub: 'تەنها بەڕێوەبەر و سەرچاوە مرۆییەکان ئەم بەشە دەبینن. هیچ شتێک لێرە ناخرێتە ناو هەژمارە سەرەکییەکان.',
     pvNotesTitle: 'تێبینیی زێڕ و زیو (بێ نرخ)', pvNotesHint: 'تەنها بڕەکە وەک تێبینی تۆمار بکە. لە هیچ هەژمارێکدا ناژمێردرێت.',
     metal: 'کانزا', silver: 'زیو', gold: 'زێڕ', direction: 'ئاڕاستە', dirIn: 'هاتوو (وەرگیراو)', dirOut: 'چوو (دراو)',
     colMetal: 'کانزا', colDirection: 'ئاڕاستە', pvIn: 'هاتوو', pvOut: 'چوو', pvBalance: 'ماوە',
@@ -852,7 +864,7 @@ function computeTotals(){
     const total = Number(r.total)||0, buzanValue = (Number(r.marketPrice)||0)*kg;
     if(r.type === WAY1){ suly.soldKg += kg; suly.soldTotal += total; buzan.boughtKg += kg; buzan.boughtTotal += buzanValue; }
     else if(r.type === WAY2){ suly.boughtKg += kg; suly.boughtTotal += total; buzan.soldKg += kg; buzan.soldTotal += buzanValue; }
-    totalMargin += Number(r.margin)||0;
+    totalMargin += effMargin(r);
     tradeCount += 1;
     tradeRecords.push(r);
   });
@@ -968,14 +980,14 @@ function renderTable(){
         html += '<td>'+esc(r.notes)+'</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>$0</td>'+
           '<td>'+esc(r.enteredBy)+'</td>';
       } else {
-        const marginClass = Number(r.margin) >= 0 ? 'margin-pos' : 'margin-neg';
+        const em = effMargin(r), marginClass = em >= 0 ? 'margin-pos' : 'margin-neg';
         html += '<td>'+esc(r.customer)+'</td>'+
           '<td class="num">'+Number(r.rate).toFixed(3)+'</td>'+
           '<td class="num">'+fmtMoney(r.negotiatedPrice)+'</td>'+
           '<td class="num">'+Number(r.ounce).toFixed(2)+'</td>'+
           '<td class="num">'+fmtMoney(r.marketPrice)+'</td>'+
-          '<td class="num"><span class="margin-pill '+marginClass+'">'+fmtSigned(r.margin)+'</span></td>'+
-          '<td class="num"><span class="margin-pill '+(Number(r.margin)>=0?'margin-pos':'margin-neg')+'">'+fmtSigned(Number(r.margin)*Number(r.kg))+'</span></td>'+
+          '<td class="num"><span class="margin-pill '+marginClass+'">'+fmtSigned(em)+'</span></td>'+
+          '<td class="num"><span class="margin-pill '+(em>=0?'margin-pos':'margin-neg')+'">'+fmtSigned(em*Number(r.kg))+'</span></td>'+
           '<td class="num">'+fmtMoney(r.total)+'</td>'+
           '<td>'+esc(r.enteredBy)+'</td>';
       }
@@ -999,7 +1011,7 @@ function updateComputed(){
   const price = parseFloat(document.getElementById('f-price').value) || 0;
   const ounce = kg / OUNCE_DIVISOR;
   const market = (rate / TROY_OUNCE_GRAMS) * 1000;
-  const margin = price - market;
+  const margin = marginFor(document.getElementById('f-type').value, price, market);
   const total = price * kg;
   document.getElementById('c-ounce').textContent = ounce.toFixed(2);
   document.getElementById('c-market').textContent = fmtMoney(market);
@@ -1098,8 +1110,8 @@ function exportRows(){
     row['Price/KG'] = isGrant ? '' : round2(r.negotiatedPrice);
     row['Ounce'] = isGrant ? '' : round2(r.ounce);
     row['Market $/KG'] = isGrant ? '' : round2(r.marketPrice);
-    row['Margin'] = isGrant ? '' : round2(r.margin);
-    row['P/L x KG'] = isGrant ? '' : round2(Number(r.margin) * Number(r.kg));
+    row['Margin'] = isGrant ? '' : round2(effMargin(r));
+    row['P/L x KG'] = isGrant ? '' : round2(effMargin(r) * Number(r.kg));
     row['Total'] = isGrant ? '' : round2(r.total);
     row['Entered by'] = r.enteredBy || '';
     row['Notes'] = r.notes || '';
