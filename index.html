@@ -179,6 +179,43 @@
   .chart-box{position:relative;height:260px;min-width:0;width:100%;}
   .chart-card{min-width:0;}
   .chart-empty{color:var(--muted);font-size:13px;text-align:center;padding:60px 0;}
+
+  /* ---- full-screen pages (calculator, live chart) ---- */
+  .nav-tools{display:flex;flex-direction:column;gap:6px;margin-bottom:14px;}
+  .tool-btn{display:flex;align-items:center;gap:10px;width:100%;background:rgba(255,255,255,.55);color:var(--ink);border:1px solid var(--border-soft);padding:9px 12px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;text-align:start;}
+  .tool-btn:hover{background:#fff;}
+  .tool-btn svg{width:20px;height:20px;flex-shrink:0;stroke:var(--gold);}
+  .page{display:none;position:fixed;inset:0;z-index:40;overflow-y:auto;-webkit-overflow-scrolling:touch;
+    background:radial-gradient(circle at 15% 0%, rgba(216,169,58,.10), transparent 45%),linear-gradient(160deg,var(--bg1),var(--bg2) 55%,#ffffff);}
+  .page.open{display:block;}
+  .page-head{position:sticky;top:0;z-index:3;display:flex;align-items:center;gap:12px;padding:10px 16px;background:var(--glass-strong);
+    backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--border-soft);}
+  .page-head h2{font-size:18px;}
+  .back-btn{display:flex;align-items:center;gap:6px;padding:8px 14px;}
+  .back-btn svg{width:16px;height:16px;stroke:currentColor;}
+  body[dir='rtl'] .back-btn svg{transform:scaleX(-1);}
+  .page-body{max-width:1000px;margin:0 auto;padding:16px;}
+  .seg{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;}
+  .seg-btn{background:rgba(255,255,255,.55);color:var(--ink);border:1px solid var(--border-soft);padding:8px 16px;font-size:13px;}
+  .seg-btn.active{background:var(--gold);color:#fff;border-color:var(--gold);}
+  .calc-display{background:rgba(255,255,255,.7);border:1px solid var(--border-soft);border-radius:var(--radius-sm);padding:12px 16px;margin-bottom:12px;text-align:right;direction:ltr;min-height:78px;}
+  #calc-expr{font-size:14px;color:var(--muted);min-height:20px;word-break:break-all;}
+  #calc-out{font-size:32px;font-weight:700;margin-top:2px;word-break:break-all;}
+  .keypad{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;max-width:420px;margin:0 auto;direction:ltr;}
+  .keypad button{padding:0;height:54px;font-size:20px;font-weight:600;background:rgba(255,255,255,.75);color:var(--ink);border:1px solid var(--border-soft);border-radius:16px;}
+  .keypad button:hover{background:#fff;}
+  .keypad button.op{background:var(--gold-ghost);color:var(--gold);}
+  .keypad button.fn{background:rgba(0,0,0,.05);}
+  .keypad button.eq{background:var(--gold);color:#fff;grid-column:span 3;}
+  .keypad button.z{grid-column:span 2;}
+  .hist-item{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;padding:10px 12px;background:rgba(255,255,255,.5);border-radius:var(--radius-xs);margin-bottom:8px;}
+  .hist-item .meta{font-size:11px;color:var(--muted);}
+  .hist-item .expr{font-size:13px;word-break:break-word;}
+  .hist-item .res{font-size:14px;font-weight:700;word-break:break-word;}
+  .badge{display:inline-block;font-size:10px;font-weight:700;border-radius:999px;padding:1px 8px;background:var(--gold-ghost);color:var(--gold);margin-inline-end:6px;}
+  .tv-box{height:calc(100vh - 150px);min-height:420px;border-radius:var(--radius-sm);overflow:hidden;background:#fff;border:1px solid var(--border-soft);}
+  .tv-syms{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center;}
+  input[type=search]{margin-bottom:12px;}
   .rr-break{display:none;}
   .tab-sep{height:1px;background:var(--border-soft);margin:8px 4px;}
   .pv-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
@@ -204,6 +241,14 @@
     .sidebar .brand{white-space:nowrap;font-size:15px;margin:0;}
     .side-logo{width:36px;height:36px;margin:0;flex-shrink:0;}
     .sidebar .who{display:none;}
+    .nav-tools{flex-direction:row;margin:0;width:auto;flex-shrink:0;}
+    .tool-btn{width:auto;padding:8px;border-radius:50%;}
+    .tool-btn span{display:none;}
+    .page-body{padding:10px;}
+    .page-head{padding:8px 10px;}
+    .keypad button{height:46px;font-size:17px;}
+    #calc-out{font-size:26px;}
+    .tv-box{height:calc(100vh - 128px);}
     .lang-switch{margin:0;flex-shrink:0;width:auto;}
     #tab-list{display:none;}
     #add-employee-link{order:1;flex-shrink:0;}
@@ -302,6 +347,10 @@
     <div class="brand" data-i18n="brand">Suly / Buzan</div>
     <div class="who" id="who"></div>
     <div class="lang-switch"><button id="lang-en" onclick="setLang('en')">English</button><button id="lang-ckb" onclick="setLang('ckb')">کوردی</button></div>
+    <div class="nav-tools">
+      <button class="tool-btn" onclick="openPage('calc')" title="Calculator"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="3"/><rect x="7.5" y="6.5" width="9" height="3.5" rx="1"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 17.5h.01M12 17.5h.01M16 17.5h.01"/></svg><span data-i18n="calcTitle">Calculator</span></button>
+      <button class="tool-btn" onclick="openPage('chart')" title="Live chart"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg><span data-i18n="liveChartTitle">Live silver chart</span></button>
+    </div>
     <div id="tab-list"></div>
     <select id="tab-select" onchange="switchTab(this.value)"></select>
     <div id="add-employee-link" style="display:none;"><button class="ghost" style="width:100%;margin-bottom:10px;" onclick="openAddEmployee()" data-i18n="addEmployee">+ Add employee</button></div>
@@ -465,6 +514,109 @@
   </div>
 </div>
 
+
+<!-- ============ PAGE: CALCULATOR ============ -->
+<div id="page-calc" class="page">
+  <div class="page-head">
+    <button class="secondary back-btn" onclick="closePage()"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg><span data-i18n="back">Back</span></button>
+    <h2 data-i18n="calcTitle">Calculator</h2>
+  </div>
+  <div class="page-body">
+    <div class="subhead" style="margin-top:0;" data-i18n="calcNote">Only for you — nothing here is counted in the real accounts.</div>
+
+    <!-- TOP: the calculators -->
+    <div class="panel glass">
+      <div class="seg" id="calc-tabs">
+        <button class="seg-btn active" data-tab="basic" onclick="calcTab('basic')" data-i18n="tabBasic">Calculator</button>
+        <button class="seg-btn" data-tab="trade" onclick="calcTab('trade')" data-i18n="tabTrade">Trade calc</button>
+        <button class="seg-btn" data-tab="conv" onclick="calcTab('conv')" data-i18n="tabConvert">Converter</button>
+      </div>
+
+      <div id="ctab-basic">
+        <div class="calc-display"><div id="calc-expr" class="num"></div><div id="calc-out" class="num">0</div></div>
+        <div class="keypad" id="keypad"></div>
+      </div>
+
+      <div id="ctab-trade" style="display:none;">
+        <div class="form-grid">
+          <div><label data-i18n="type">Type</label>
+            <select id="ct-type" onchange="calcTrade()">
+              <option value="Sell Suly / Buy Buzan" data-i18n="way1">Sell Suly / Buy Buzan</option>
+              <option value="Buy Suly / Sell Buzan" data-i18n="way2">Buy Suly / Sell Buzan</option>
+            </select></div>
+          <div><label data-i18n="kg">KG</label><input type="number" step="any" inputmode="decimal" id="ct-kg" oninput="calcTrade()"></div>
+          <div><label data-i18n="rate">Rate (per troy oz)</label><input type="number" step="any" inputmode="decimal" id="ct-rate" oninput="calcTrade()"></div>
+          <div><label data-i18n="price">Negotiated price (per KG)</label><input type="number" step="any" inputmode="decimal" id="ct-price" oninput="calcTrade()"></div>
+          <div><label data-i18n="targetMargin">Target margin per KG (optional)</label><input type="number" step="any" inputmode="decimal" id="ct-target" oninput="calcTrade()"></div>
+          <div class="full"><label data-i18n="noteOpt">Note (optional)</label><input type="text" id="ct-note"></div>
+        </div>
+        <div class="computed-row">
+          <div data-i18n="ounce">Ounce<span class="num" id="ct-ounce">0.00</span></div>
+          <div data-i18n="marketPrice">Market price / KG<span class="num" id="ct-market">$0.00</span></div>
+          <div data-i18n="margin">Margin<span class="num" id="ct-margin"><span class="margin-pill">$0.00</span></span></div>
+          <div data-i18n="plKg">P/L × KG<span class="num" id="ct-plkg">$0.00</span></div>
+          <div data-i18n="total">Total<span class="num" id="ct-total">$0.00</span></div>
+          <div data-i18n="priceToQuote">Price to quote<span class="num" id="ct-quote">—</span></div>
+        </div>
+        <button onclick="saveTradeCalc()" data-i18n="saveCalc">Save calculation</button>
+      </div>
+
+      <div id="ctab-conv" style="display:none;">
+        <div class="form-grid">
+          <div><label data-i18n="kg">KG</label><input type="number" step="any" inputmode="decimal" id="cv-kg" oninput="convFrom('kg')"></div>
+          <div><label data-i18n="gram">Gram</label><input type="number" step="any" inputmode="decimal" id="cv-g" oninput="convFrom('g')"></div>
+          <div><label data-i18n="troyOz">Troy ounce</label><input type="number" step="any" inputmode="decimal" id="cv-oz" oninput="convFrom('oz')"></div>
+          <div><label data-i18n="ounce">Ounce</label><input type="number" step="any" inputmode="decimal" id="cv-led" oninput="convFrom('led')"></div>
+        </div>
+        <div class="hint" style="margin-top:0;" data-i18n="convHint">Ounce here is the ledger's ounce: KG ÷ 155.52.</div>
+        <div class="form-grid">
+          <div><label data-i18n="rate">Rate (per troy oz)</label><input type="number" step="any" inputmode="decimal" id="cv-rate" oninput="convRate()"></div>
+          <div><label data-i18n="marketPrice">Market price / KG</label><input type="number" step="any" inputmode="decimal" id="cv-market" oninput="convMarket()"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN: the transactions of this account -->
+    <div class="panel glass">
+      <h3 id="ctx-title" style="margin-bottom:4px;"></h3>
+      <div class="subhead" style="margin:0 0 10px;" data-i18n="ctxHint">Tick rows to total them, or press Use to load one into the trade calculator.</div>
+      <input type="search" id="ctx-search" oninput="renderCalcTx()">
+      <div class="computed-row" id="ctx-sel"></div>
+      <div class="pv-wrap" id="ctx-table"></div>
+    </div>
+
+    <!-- FOOTER: saved calculations + PDF -->
+    <div class="panel glass" id="calc-foot">
+      <div class="chart-head">
+        <h3 data-i18n="calcHistory">My calculations</h3>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="secondary pdfbtn" onclick="exportCalcPdf()" data-i18n="downloadPdf">⬇ Download PDF</button>
+          <button class="danger" onclick="clearCalcs()" data-i18n="clearAll">Clear all</button>
+        </div>
+      </div>
+      <div id="calc-hist"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ PAGE: LIVE CHART ============ -->
+<div id="page-chart" class="page">
+  <div class="page-head">
+    <button class="secondary back-btn" onclick="closePage()"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg><span data-i18n="back">Back</span></button>
+    <h2 data-i18n="liveChartTitle">Live silver chart</h2>
+  </div>
+  <div class="page-body">
+    <div class="tv-syms">
+      <button class="chip-sym secondary" data-sym="TVC:SILVER" onclick="loadTv('TVC:SILVER')" data-i18n="symSilver">Silver</button>
+      <button class="chip-sym secondary" data-sym="COMEX:SI1!" onclick="loadTv('COMEX:SI1!')" data-i18n="symSilverFut">Silver futures</button>
+      <button class="chip-sym secondary" data-sym="TVC:GOLD" onclick="loadTv('TVC:GOLD')" data-i18n="symGold">Gold</button>
+      <a class="link-btn" id="tv-open" href="https://www.tradingview.com/chart/?symbol=TVC%3ASILVER" target="_blank" rel="noopener" data-i18n="openTv">Open on TradingView</a>
+    </div>
+    <div class="tv-box" id="tv-box"></div>
+    <div class="hint" style="margin-top:8px;" data-i18n="tvHint">Live chart from TradingView (needs internet). Prices are for watching the market only and are not saved in the ledger.</div>
+  </div>
+</div>
+
 <!-- ============ DATE PICKER MODAL ============ -->
 <div id="dp-modal" class="dp-backdrop" onclick="if(event.target===this)closeDatePicker(true)">
   <div class="glass dp-card">
@@ -606,6 +758,17 @@ const I18N = {
     plKg: 'P/L × KG', colPlKg: 'P/L × KG', netProfit: 'Net profit (per KG left in shop)', netProfitClosed: 'Profit on completed buy & sell (without remaining KG)', netProfitOpen: 'Profit on remaining KG only', toSell: 'left to sell', toBuy: 'left to buy back',
     roleLabel: 'Role', roleEmployee: 'Employee (own tab, view only)', roleHr: 'HR (view & download everything, no editing)', hrSub: 'View and download only — HR cannot add or change data.',
     exportFailed: 'Could not create the PDF.',
+    calcTitle: 'Calculator', liveChartTitle: 'Live silver chart', back: 'Back', calcNote: 'Only for you — nothing here is counted in the real accounts.',
+    tabBasic: 'Calculator', tabTrade: 'Trade calc', tabConvert: 'Converter', targetMargin: 'Target margin per KG (optional)',
+    noteOpt: 'Note (optional)', priceToQuote: 'Price to quote', saveCalc: 'Save calculation', gram: 'Gram', troyOz: 'Troy ounce',
+    convHint: "Ounce here is the ledger's ounce: KG ÷ 155.52.",
+    ctxHint: 'Tick rows to total them, or press Use to load one into the trade calculator.', ctxTitle: 'Transactions of', searchPh: 'Search date, customer, notes…',
+    useBtn: 'Use', selected: 'Selected', selCount: 'Rows', selKg: 'KG', selTotal: 'Total', selPl: 'P/L × KG', selAvgPrice: 'Weighted avg price', noTxHere: 'No transactions to show.',
+    calcHistory: 'My calculations', clearAll: 'Clear all', noCalcs: 'No saved calculations yet.', confirmClearCalcs: 'Delete all saved calculations?',
+    kindBasic: 'Calculator', kindTrade: 'Trade', colCalcTime: 'Date / time', colCalcKind: 'Type', colCalcExpr: 'Calculation', colCalcResult: 'Result', colCalcNote: 'Note',
+    symSilver: 'Silver', symSilverFut: 'Silver futures', symGold: 'Gold', openTv: 'Open on TradingView',
+    tvHint: 'Live chart from TradingView (needs internet). Prices are for watching the market only and are not saved in the ledger.',
+    first200: 'Showing the latest 200 rows.',
     chartsTitle: 'Charts', chartSilver: 'Silver (KG)', last7: 'Last 7 days', last30: 'Last 30 days', thisYear: 'This year',
     sameAsFilter: 'Same as dates above', groupDay: 'Daily', groupWeek: 'Weekly', groupMonth: 'Monthly',
     metricProfit: 'Profit', metricMoney: 'Money bought / sold', metricCount: 'Count',
@@ -658,6 +821,17 @@ const I18N = {
     plKg: 'قازانج/زیان × کیلۆ', colPlKg: 'قازانج/زیان × کیلۆ', netProfit: 'قازانجی ڕاستەقینە (بۆ هەر کیلۆی ماوە لە دووکان)', netProfitClosed: 'قازانجی کڕین و فرۆشتنی تەواوبوو (بەبێ کیلۆی ماوە)', netProfitOpen: 'قازانجی تەنها ئەو کیلۆیانەی ماونەتەوە', toSell: 'ماوە بۆ فرۆشتن', toBuy: 'ماوە بۆ کڕین',
     roleLabel: 'ڕۆڵ', roleEmployee: 'کارمەند (تەنها لاپەڕەی خۆی، تەنها بینین)', roleHr: 'سەرچاوە مرۆییەکان (بینین و داگرتنی هەموو شتێک، بێ دەستکاری)', hrSub: 'تەنها بینین و داگرتن — سەرچاوە مرۆییەکان ناتوانن زانیاری زیاد بکەن یان بیگۆڕن.',
     exportFailed: 'نەتوانرا PDF دروست بکرێت.',
+    calcTitle: 'ژمێرەر', liveChartTitle: 'هێڵکاری زیندووی زیو', back: 'گەڕانەوە', calcNote: 'تەنها بۆ خۆتە — هیچ شتێک لێرە ناخرێتە ناو هەژمارە ڕاستەقینەکان.',
+    tabBasic: 'ژمێرەر', tabTrade: 'ژمێرەری مامەڵە', tabConvert: 'گۆڕەر', targetMargin: 'قازانجی مەبەست بۆ هەر کیلۆیەک (ئارەزوومەندانە)',
+    noteOpt: 'تێبینی (ئارەزوومەندانە)', priceToQuote: 'نرخی پێشنیارکراو', saveCalc: 'پاشەکەوتکردنی ژماردن', gram: 'گرام', troyOz: 'ئۆنسی تروی',
+    convHint: 'ئۆنس لێرە ئەو ئۆنسەیە کە لە تۆمارنامەدا بەکاردێت: کیلۆ ÷ ١٥٥.٥٢.',
+    ctxHint: 'ڕیزەکان هەڵبژێرە بۆ کۆکردنەوەیان، یان کلیک لە «بەکاربهێنە» بکە بۆ ناردنی یەکێکیان بۆ ژمێرەری مامەڵە.', ctxTitle: 'مامەڵەکانی', searchPh: 'گەڕان بەپێی بەروار، کڕیار، تێبینی…',
+    useBtn: 'بەکاربهێنە', selected: 'هەڵبژێردراو', selCount: 'ڕیز', selKg: 'کیلۆ', selTotal: 'کۆی گشتی', selPl: 'قازانج/زیان × کیلۆ', selAvgPrice: 'تێکڕای نرخی باری کێشراو', noTxHere: 'هیچ مامەڵەیەک نییە بۆ پیشاندان.',
+    calcHistory: 'ژماردنەکانم', clearAll: 'سڕینەوەی هەموو', noCalcs: 'هێشتا هیچ ژماردنێک پاشەکەوت نەکراوە.', confirmClearCalcs: 'هەموو ژماردنە پاشەکەوتکراوەکان بسڕدرێنەوە؟',
+    kindBasic: 'ژمێرەر', kindTrade: 'مامەڵە', colCalcTime: 'بەروار / کات', colCalcKind: 'جۆر', colCalcExpr: 'ژماردن', colCalcResult: 'ئەنجام', colCalcNote: 'تێبینی',
+    symSilver: 'زیو', symSilverFut: 'داهاتووی زیو', symGold: 'زێڕ', openTv: 'کردنەوە لە TradingView',
+    tvHint: 'هێڵکاری زیندوو لە TradingView (پێویستی بە ئینتەرنێت هەیە). نرخەکان تەنها بۆ سەیرکردنی بازاڕن و لە تۆمارنامەدا پاشەکەوت ناکرێن.',
+    first200: 'نوێترین ٢٠٠ ڕیز پیشان دەدرێت.',
     chartsTitle: 'هێڵکاری', chartSilver: 'زیو (کیلۆ)', last7: '٧ ڕۆژی ڕابردوو', last30: '٣٠ ڕۆژی ڕابردوو', thisYear: 'ئەمساڵ',
     sameAsFilter: 'وەک ماوەی سەرەوە', groupDay: 'ڕۆژانە', groupWeek: 'هەفتانە', groupMonth: 'مانگانە',
     metricProfit: 'قازانج', metricMoney: 'پارەی کڕین / فرۆشتن', metricCount: 'ژمارە',
@@ -704,6 +878,8 @@ function setLang(lang){
     buildSidebar();
     renderAll();
     renderDatesSummary();
+    if(openedPage === 'calc'){ renderCalc(); calcTrade(); renderCalcTx(); renderCalcHist(); }
+    if(openedPage === 'chart') loadTv(tvSymbol || 'TVC:SILVER');
     if(viewingTab === 'PRIVATE'){ renderPrivate(); updatePvSwap(); }
   }
 }
@@ -737,6 +913,8 @@ async function doLogin(){
 function signOut(){
   if(unsubscribe){ unsubscribe(); unsubscribe = null; }
   if(privateUnsub){ privateUnsub(); privateUnsub = null; }
+  if(location.hash) location.hash = '';
+  calcSel = new Set(); calcList = [];
   subscribedTab = null; allRecords = []; currentRecords = []; privateRecords = []; employees = [];
   auth.signOut();
   session = null;
@@ -857,6 +1035,7 @@ function closeAddEmployee(){ document.getElementById('add-employee-modal').style
 
 /* ====== APP SHELL ====== */
 async function enterApp(){
+  if(location.hash) history.replaceState(null, '', location.pathname + location.search);
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app').classList.add('active');
   document.getElementById('who').textContent = session.fullName + ' · ' + session.role;
@@ -1066,6 +1245,7 @@ function applyRangeFilter(){
 }
 
 function renderAll(){
+  if(openedPage === 'calc') renderCalcTx();
   renderWayCards();
   renderBalance();
   renderCharts();
@@ -1303,6 +1483,291 @@ function resetForm(){
   updateComputed();
 }
 
+/* ====================================================================
+   PAGES: CALCULATOR + LIVE CHART  (full-screen pages opened from the icons in the menu)
+   Nothing on these pages is written to the ledger. Saved calculations live only on this device.
+   ==================================================================== */
+let openedPage = null;
+function openPage(name){
+  if(!session) return;
+  if(location.hash !== '#' + name){ location.hash = name; } else { syncPage(); }
+}
+function closePage(){
+  if(location.hash){ history.length > 1 && /^#(calc|chart)$/.test(location.hash) ? history.back() : (location.hash = ''); }
+  setTimeout(syncPage, 30);
+}
+function syncPage(){
+  const h = location.hash.replace('#','');
+  const want = (session && (h === 'calc' || h === 'chart')) ? h : null;
+  document.getElementById('page-calc').classList.toggle('open', want === 'calc');
+  document.getElementById('page-chart').classList.toggle('open', want === 'chart');
+  document.body.style.overflow = want ? 'hidden' : '';
+  if(want === openedPage) return;
+  openedPage = want;
+  if(want === 'calc') onOpenCalc();
+  if(want === 'chart') onOpenChart();
+}
+window.addEventListener('hashchange', syncPage);
+document.addEventListener('keydown', e => {
+  if(openedPage === 'calc' && !(e.target && /^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName)) && document.getElementById('ctab-basic').style.display !== 'none'){
+    const k = e.key;
+    if(/^[0-9.]$/.test(k)) { calcKey(k); e.preventDefault(); }
+    else if('+-*/()%'.indexOf(k) !== -1 && k.length === 1){ calcKey(k === '*' ? '×' : k === '/' ? '÷' : k === '-' ? '−' : k); e.preventDefault(); }
+    else if(k === 'Enter' || k === '='){ calcKey('='); e.preventDefault(); }
+    else if(k === 'Backspace'){ calcKey('⌫'); e.preventDefault(); }
+    else if(k === 'Delete' || k === 'c' || k === 'C'){ calcKey('C'); e.preventDefault(); }
+  }
+  if(e.key === 'Escape' && openedPage && document.getElementById('dp-modal').style.display !== 'flex') closePage();
+});
+
+/* ---- basic calculator (own parser — no eval) ---- */
+let cExpr = '', cJustEq = false, cLastRes = '';
+const KEYS = [
+  ['C','fn'],['(','fn'],[')','fn'],['⌫','fn'],['÷','op'],
+  ['7',''],['8',''],['9',''],['%','fn'],['×','op'],
+  ['4',''],['5',''],['6',''],['±','fn'],['−','op'],
+  ['1',''],['2',''],['3',''],['.',''],['+','op'],
+  ['0','z'],['=','eq']
+];
+function buildKeypad(){
+  const kp = document.getElementById('keypad');
+  if(kp.childElementCount) return;
+  kp.innerHTML = KEYS.map(k => '<button class="'+k[1]+'" data-k="'+k[0]+'" type="button">'+k[0]+'</button>').join('');
+  kp.addEventListener('click', e => { const b = e.target.closest('button'); if(b) calcKey(b.getAttribute('data-k')); });
+}
+function calcEval(src){
+  const s = String(src).replace(/×/g,'*').replace(/÷/g,'/').replace(/−/g,'-').replace(/\s+/g,'');
+  if(!s) return null;
+  let i = 0;
+  function num(){
+    const m = /^\d*\.?\d+(?:e[+-]?\d+)?|^\d+\.?/i.exec(s.slice(i)); if(!m) throw 0; i += m[0].length; return parseFloat(m[0]);
+  }
+  function primary(){
+    let v;
+    if(s[i] === '('){ i++; v = expr(); if(s[i] !== ')') throw 0; i++; }
+    else if(s[i] === '-'){ i++; return { v: -primary().v, pct: false }; }
+    else if(s[i] === '+'){ i++; return primary(); }
+    else v = num();
+    let pct = false;
+    while(s[i] === '%'){ i++; v = v / 100; pct = true; }
+    return { v, pct };
+  }
+  function term(){
+    let f = primary(), v = f.v, bare = f.pct, n = 1;
+    while(s[i] === '*' || s[i] === '/'){
+      const op = s[i++]; const r = primary(); n++;
+      if(op === '*') v *= r.v; else { if(r.v === 0) throw 0; v /= r.v; }
+    }
+    return { v, pctOnly: bare && n === 1 };
+  }
+  function expr(){
+    let left = term().v;
+    // pct handling: "200 + 10%" means 200 + 10% of 200
+    while(s[i] === '+' || s[i] === '-'){
+      const op = s[i++]; const r = term();
+      const rv = r.pctOnly ? left * r.v : r.v;
+      left = op === '+' ? left + rv : left - rv;
+    }
+    return left;
+  }
+  try{
+    const v = expr(); if(i !== s.length || !isFinite(v)) return null;
+    return parseFloat(v.toPrecision(12));
+  }catch(e){ return null; }
+}
+function fmtCalc(n){
+  if(n == null) return '';
+  if(Math.abs(n) >= 1e15 || (Math.abs(n) > 0 && Math.abs(n) < 1e-8)) return n.toExponential(6);
+  return n.toLocaleString('en-US', { maximumFractionDigits: 8 });
+}
+function calcKey(k){
+  if(!k) return;
+  const ops = '+−×÷';
+  const last = cExpr.slice(-1);
+  if(k === 'C'){ cExpr = ''; cJustEq = false; }
+  else if(k === '⌫'){ cExpr = cJustEq ? '' : cExpr.slice(0, -1); cJustEq = false; }
+  else if(k === '='){
+    const v = calcEval(cExpr);
+    if(v == null){ if(cExpr) flashCalc(); return; }
+    if(cExpr && !cJustEq) addCalc('basic', cExpr + ' =', fmtCalc(v), '');
+    cExpr = String(v); cJustEq = true;
+  }
+  else if(k === '±'){
+    if(!cExpr){ return; }
+    const m = /(-?\d*\.?\d+)$/.exec(cExpr);
+    if(m){ const head = cExpr.slice(0, cExpr.length - m[1].length); const n = m[1].charAt(0) === '-' ? m[1].slice(1) : '-' + m[1]; cExpr = head + n; }
+    cJustEq = false;
+  }
+  else if(ops.indexOf(k) !== -1){
+    if(!cExpr && k !== '−') return;
+    if(ops.indexOf(last) !== -1) cExpr = cExpr.slice(0, -1);
+    cExpr += k; cJustEq = false;
+  }
+  else if(k === '%'){ if(/[\d)]$/.test(cExpr)) cExpr += '%'; cJustEq = false; }
+  else if(k === '(' ){ if(cJustEq) cExpr = ''; cExpr += '('; cJustEq = false; }
+  else if(k === ')' ){ if((cExpr.match(/\(/g)||[]).length > (cExpr.match(/\)/g)||[]).length) cExpr += ')'; cJustEq = false; }
+  else { // digit or dot
+    if(cJustEq){ cExpr = ''; cJustEq = false; }
+    if(k === '.'){ const seg = cExpr.split(/[+−×÷()%]/).pop(); if(seg.indexOf('.') !== -1) return; if(!seg) cExpr += '0'; }
+    cExpr += k;
+  }
+  renderCalc();
+}
+function flashCalc(){ const el = document.getElementById('calc-out'); el.style.color = 'var(--red-fg)'; setTimeout(() => { el.style.color = ''; }, 350); }
+function renderCalc(){
+  const v = calcEval(cExpr);
+  document.getElementById('calc-expr').textContent = cJustEq ? '' : cExpr;
+  document.getElementById('calc-out').textContent = cJustEq ? fmtCalc(parseFloat(cExpr)) : (v != null && cExpr ? fmtCalc(v) : (cExpr ? '…' : '0'));
+}
+
+/* ---- trade calculator (same formulas as the ledger form) ---- */
+function calcTrade(){
+  const type = document.getElementById('ct-type').value;
+  const kg = parseFloat(document.getElementById('ct-kg').value) || 0;
+  const rate = parseFloat(document.getElementById('ct-rate').value) || 0;
+  const price = parseFloat(document.getElementById('ct-price').value) || 0;
+  const target = document.getElementById('ct-target').value;
+  const market = (rate / TROY_OUNCE_GRAMS) * 1000;
+  const margin = marginFor(type, price, market);
+  document.getElementById('ct-ounce').textContent = (kg / OUNCE_DIVISOR).toFixed(2);
+  document.getElementById('ct-market').textContent = fmtMoney(market);
+  document.getElementById('ct-total').textContent = fmtMoney(price * kg);
+  document.getElementById('ct-plkg').textContent = fmtSigned(margin * kg);
+  const pill = document.querySelector('#ct-margin .margin-pill');
+  pill.textContent = fmtSigned(margin); pill.className = 'margin-pill ' + (margin >= 0 ? 'margin-pos' : 'margin-neg');
+  // price to quote so that the margin equals the target: Way 1 price = market + target; Way 2 price = market - target
+  document.getElementById('ct-quote').textContent = (target !== '' && rate) ? fmtMoney(type === WAY2 ? market - parseFloat(target) : market + parseFloat(target)) : '—';
+  return { type, kg, rate, price, market, margin };
+}
+function saveTradeCalc(){
+  const c = calcTrade();
+  if(!c.kg || !c.rate || !c.price){ alert(t('fillRequired')); return; }
+  const typeLabel = c.type === WAY2 ? t('way2') : t('way1');
+  addCalc('trade', typeLabel + ' · ' + c.kg + ' kg · ' + t('colRate') + ' ' + cleanRate(c.rate) + ' · ' + t('colPrice') + ' ' + fmtMoney(c.price),
+    t('margin') + ' ' + fmtSigned(c.margin) + ' · ' + t('plKg') + ' ' + fmtSigned(c.margin * c.kg) + ' · ' + t('total') + ' ' + fmtMoney(c.price * c.kg),
+    document.getElementById('ct-note').value);
+  document.getElementById('ct-note').value = '';
+}
+
+/* ---- converter ---- */
+function trim6(n){ return String(+Number(n).toFixed(6)); }
+function convFrom(src){
+  const v = parseFloat(document.getElementById({ kg:'cv-kg', g:'cv-g', oz:'cv-oz', led:'cv-led' }[src]).value);
+  if(!isFinite(v)){ ['cv-kg','cv-g','cv-oz','cv-led'].forEach(id => { if(id !== { kg:'cv-kg', g:'cv-g', oz:'cv-oz', led:'cv-led' }[src]) document.getElementById(id).value = ''; }); return; }
+  const kg = src === 'kg' ? v : src === 'g' ? v / 1000 : src === 'oz' ? v * TROY_OUNCE_GRAMS / 1000 : v * OUNCE_DIVISOR;
+  if(src !== 'kg') document.getElementById('cv-kg').value = trim6(kg);
+  if(src !== 'g') document.getElementById('cv-g').value = trim6(kg * 1000);
+  if(src !== 'oz') document.getElementById('cv-oz').value = trim6(kg * 1000 / TROY_OUNCE_GRAMS);
+  if(src !== 'led') document.getElementById('cv-led').value = trim6(kg / OUNCE_DIVISOR);
+}
+function convRate(){ const v = parseFloat(document.getElementById('cv-rate').value); document.getElementById('cv-market').value = isFinite(v) ? trim6(v / TROY_OUNCE_GRAMS * 1000) : ''; }
+function convMarket(){ const v = parseFloat(document.getElementById('cv-market').value); document.getElementById('cv-rate').value = isFinite(v) ? trim6(v * TROY_OUNCE_GRAMS / 1000) : ''; }
+
+function calcTab(name){
+  document.querySelectorAll('#calc-tabs .seg-btn').forEach(b => b.classList.toggle('active', b.getAttribute('data-tab') === name));
+  ['basic','trade','conv'].forEach(n => { document.getElementById('ctab-' + n).style.display = n === name ? 'block' : 'none'; });
+}
+
+/* ---- saved calculations (this device only, never sent to the ledger) ---- */
+let calcList = [];
+function calcStoreKey(){ return 'sbl_calcs_' + (session ? session.uid : 'x'); }
+function loadCalcs(){ try{ calcList = JSON.parse(localStorage.getItem(calcStoreKey()) || '[]') || []; }catch(e){ /* storage blocked: keep in memory */ } }
+function persistCalcs(){ calcList = calcList.slice(-200); try{ localStorage.setItem(calcStoreKey(), JSON.stringify(calcList)); }catch(e){} }
+function nowStamp(){ const d = new Date(), p = n => String(n).padStart(2,'0'); return ymd(d) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes()); }
+function addCalc(kind, expr, result, note){
+  calcList.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2,6), at: nowStamp(), kind, expr, result, note: note || '' });
+  persistCalcs(); renderCalcHist();
+}
+function delCalc(id){ calcList = calcList.filter(c => c.id !== id); persistCalcs(); renderCalcHist(); }
+function clearCalcs(){ if(!calcList.length) return; if(!confirm(t('confirmClearCalcs'))) return; calcList = []; persistCalcs(); renderCalcHist(); }
+function renderCalcHist(){
+  const el = document.getElementById('calc-hist');
+  if(!calcList.length){ el.innerHTML = '<div class="empty">'+t('noCalcs')+'</div>'; return; }
+  el.innerHTML = calcList.slice().reverse().map(c =>
+    '<div class="hist-item"><div><div class="meta num"><span class="badge">'+t(c.kind === 'trade' ? 'kindTrade' : 'kindBasic')+'</span>'+esc(c.at)+'</div>'+
+    '<div class="expr num" dir="auto">'+esc(c.expr)+'</div><div class="res num" dir="auto">'+esc(c.result)+'</div>'+(c.note ? '<div class="meta">'+esc(c.note)+'</div>' : '')+'</div>'+
+    '<button class="danger" data-del-calc="'+c.id+'">✕</button></div>').join('');
+}
+document.getElementById('calc-hist').addEventListener('click', e => { const id = e.target.getAttribute('data-del-calc'); if(id) delCalc(id); });
+function exportCalcPdf(){
+  if(!calcList.length) return;
+  const rows = calcList.slice().reverse().map(c => ({ 'CTime': c.at, 'CKind': t(c.kind === 'trade' ? 'kindTrade' : 'kindBasic'), 'CExpr': c.expr, 'CResult': c.result, 'CNote': c.note || '' }));
+  const who = session ? session.fullName : '';
+  return generatePdf('#calc-foot .pdfbtn', [{ titleHtml: esc(t('calcHistory')) + ' — <bdi>' + esc(who) + '</bdi>', sub: t('calcNote'), rows }], 'Calculations_' + who.replace(/[^\w؀-ۿ-]+/g,'_') + '_' + ymd(new Date()));
+}
+
+/* ---- the account's transactions inside the calculator page ---- */
+let calcSel = new Set();
+function calcTxRows(){
+  const q = document.getElementById('ctx-search').value.trim().toLowerCase();
+  let rows = allRecords.filter(r => r.type === WAY1 || r.type === WAY2).sort((a, b) => a.date === b.date ? tsMillis(b) - tsMillis(a) : (a.date < b.date ? 1 : -1));
+  if(q) rows = rows.filter(r => (r.date + ' ' + (r.customer||'') + ' ' + (r.notes||'') + ' ' + (r.tabName||'') + ' ' + (r.type===WAY1?t('way1'):t('way2'))).toLowerCase().indexOf(q) !== -1);
+  return rows;
+}
+function renderCalcTx(){
+  if(!session) return;
+  document.getElementById('ctx-search').placeholder = t('searchPh');
+  const acct = subscribedTab === 'ALL' ? t('allEmployees') : (subscribedTab || session.fullName);
+  document.getElementById('ctx-title').textContent = t('ctxTitle') + ' ' + acct;
+  const all = calcTxRows(), rows = all.slice(0, 200), showEmp = subscribedTab === 'ALL';
+  // selected totals
+  const sel = allRecords.filter(r => calcSel.has(r.id));
+  let kg = 0, total = 0, pl = 0, kp = 0;
+  sel.forEach(r => { const k = Number(r.kg)||0; kg += k; total += Number(r.total)||0; pl += effMargin(r) * k; kp += k * (Number(r.negotiatedPrice)||0); });
+  document.getElementById('ctx-sel').innerHTML = sel.length
+    ? '<div>'+t('selCount')+'<span class="num">'+sel.length+'</span></div><div>'+t('selKg')+'<span class="num">'+kg.toFixed(2)+'</span></div><div>'+t('selTotal')+'<span class="num">'+fmtMoney(total)+'</span></div>'+
+      '<div>'+t('selPl')+'<span class="num"><span class="margin-pill '+(pl>=0?'margin-pos':'margin-neg')+'">'+fmtSigned(pl)+'</span></span></div><div>'+t('selAvgPrice')+'<span class="num">'+fmtMoney(kg ? kp/kg : 0)+'</span></div>'+
+      '<div><button class="ghost" onclick="calcSel=new Set();renderCalcTx()">'+t('clear')+'</button></div>'
+    : '<div style="color:var(--muted)">'+t('ctxHint')+'</div>';
+  const wrap = document.getElementById('ctx-table');
+  if(!rows.length){ wrap.innerHTML = '<div class="empty">'+t('noTxHere')+'</div>'; return; }
+  let h = '<table><thead><tr><th><input type="checkbox" id="ctx-all" style="width:auto;margin:0;" '+(rows.every(r => calcSel.has(r.id)) ? 'checked' : '')+'></th><th>'+t('date')+'</th>'+(showEmp?'<th>'+t('colEmployee')+'</th>':'')+
+    '<th>'+t('colType')+'</th><th>'+t('colKg')+'</th><th>'+t('colCustomer')+'</th><th>'+t('colRate')+'</th><th>'+t('colPrice')+'</th><th>'+t('colMargin')+'</th><th>'+t('colTotal')+'</th><th></th></tr></thead><tbody>';
+  rows.forEach(r => {
+    const em = effMargin(r);
+    h += '<tr><td><input type="checkbox" style="width:auto;margin:0;" data-ctx-sel="'+r.id+'" '+(calcSel.has(r.id)?'checked':'')+'></td><td class="num">'+esc(r.date)+'</td>'+(showEmp?'<td>'+esc(r.tabName)+'</td>':'')+
+      '<td>'+(r.type===WAY1?t('way1'):t('way2'))+'</td><td class="num">'+Number(r.kg).toFixed(2)+'</td><td>'+esc(r.customer)+'</td><td class="num">'+cleanRate(r.rate)+'</td>'+
+      '<td class="num">'+fmtMoney(r.negotiatedPrice)+'</td><td class="num"><span class="margin-pill '+(em>=0?'margin-pos':'margin-neg')+'">'+fmtSigned(em)+'</span></td>'+
+      '<td class="num">'+fmtMoney(r.total)+'</td><td><button class="secondary" style="padding:5px 12px;font-size:12px;" data-ctx-use="'+r.id+'">'+t('useBtn')+'</button></td></tr>';
+  });
+  wrap.innerHTML = h + '</tbody></table>' + (all.length > 200 ? '<div class="hint" style="margin-top:8px;">'+t('first200')+'</div>' : '');
+}
+document.getElementById('ctx-table').addEventListener('click', e => {
+  const use = e.target.getAttribute('data-ctx-use'), one = e.target.getAttribute('data-ctx-sel');
+  if(e.target.id === 'ctx-all'){ const rows = calcTxRows().slice(0, 200); if(e.target.checked) rows.forEach(r => calcSel.add(r.id)); else rows.forEach(r => calcSel.delete(r.id)); renderCalcTx(); return; }
+  if(one){ if(e.target.checked) calcSel.add(one); else calcSel.delete(one); renderCalcTx(); return; }
+  if(use){
+    const r = allRecords.find(x => x.id === use); if(!r) return;
+    document.getElementById('ct-type').value = r.type; document.getElementById('ct-kg').value = r.kg;
+    document.getElementById('ct-rate').value = cleanRate(r.rate); document.getElementById('ct-price').value = r.negotiatedPrice;
+    calcTab('trade'); calcTrade(); document.getElementById('page-calc').scrollTo({ top: 0, behavior: 'smooth' });
+  }
+});
+function onOpenCalc(){
+  buildKeypad(); loadCalcs(); renderCalc(); calcTrade(); calcSel = new Set();
+  renderCalcTx(); renderCalcHist();
+}
+
+/* ---- live chart (TradingView embed) ---- */
+let tvSymbol = '';
+function loadTv(sym){
+  tvSymbol = sym;
+  document.querySelectorAll('.chip-sym').forEach(b => { const on = b.getAttribute('data-sym') === sym; b.style.background = on ? 'var(--gold)' : ''; b.style.color = on ? '#fff' : ''; });
+  document.getElementById('tv-open').href = 'https://www.tradingview.com/chart/?symbol=' + encodeURIComponent(sym);
+  const box = document.getElementById('tv-box');
+  box.innerHTML = '';
+  const wrap = document.createElement('div'); wrap.className = 'tradingview-widget-container'; wrap.style.cssText = 'height:100%;width:100%;';
+  const inner = document.createElement('div'); inner.className = 'tradingview-widget-container__widget'; inner.style.cssText = 'height:100%;width:100%;';
+  wrap.appendChild(inner);
+  const sc = document.createElement('script');
+  sc.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js'; sc.async = true;
+  sc.text = JSON.stringify({ autosize: true, symbol: sym, interval: '60', timezone: 'Asia/Baghdad', theme: 'light', style: '1',
+    locale: LANG === 'ckb' ? 'ar_AE' : 'en', allow_symbol_change: true, hide_side_toolbar: window.innerWidth < 880, withdateranges: true,
+    save_image: false, calendar: false, support_host: 'https://www.tradingview.com' });
+  wrap.appendChild(sc); box.appendChild(wrap);
+}
+function onOpenChart(){ loadTv(tvSymbol || 'TVC:SILVER'); }
+
 /* ====== CHARTS ======
    Two charts for whichever account is open: silver KG (sold / bought / left in shop) and transactions
    (profit, money, or count). Own period selector (last 7/30 days, month, year, all, or "same as dates above"
@@ -1459,7 +1924,9 @@ const EXPORT_COLS = [ // [data key, i18n key for the column title]
   ['Margin','colMargin'], ['P/L x KG','colPlKg'], ['Total','colTotal'], ['Entered by','colEnteredBy'], ['Notes','notes'],
   // private desk
   ['Metal','colMetal'], ['Direction','colDirection'], ['PKG','colKg'], ['Gave','colGave'], ['Gave KG','gaveLabel'],
-  ['Got','colGot'], ['Got KG','gotLabel'], ['XRate','colXRate'], ['Party','party']
+  ['Got','colGot'], ['Got KG','gotLabel'], ['XRate','colXRate'], ['Party','party'],
+  // calculator history
+  ['CTime','colCalcTime'], ['CKind','colCalcKind'], ['CExpr','colCalcExpr'], ['CResult','colCalcResult'], ['CNote','colCalcNote']
 ];
 const KG3_COLS = ['PKG','Gave KG','Got KG'];   // private-desk quantities keep 3 decimals (gold can be fractions of a kg)
 const SIGNED_COLS = ['Margin','P/L x KG'];
@@ -1540,7 +2007,7 @@ const PDF_CSS =
 
 const PDF_COL_W = { 'Employee':7.5, 'Date':7, 'Type':15, 'KG':4.5, 'Customer':9, 'Rate':5, 'Price/KG':6, 'Ounce':4,
   'Market $/KG':6.5, 'Margin':6, 'P/L x KG':7, 'Total':7.5, 'Entered by':11.5, 'Notes':9,
-  'Metal':8, 'Direction':11, 'PKG':8, 'Gave':8, 'Gave KG':8, 'Got':8, 'Got KG':8, 'XRate':10, 'Party':14 };
+  'CTime':12, 'CKind':8, 'CExpr':36, 'CResult':26, 'CNote':16, 'Metal':8, 'Direction':11, 'PKG':8, 'Gave':8, 'Gave KG':8, 'Got':8, 'Got KG':8, 'XRate':10, 'Party':14 };
 function ltrSpan(x){ return '<span dir="ltr">'+esc(x)+'</span>'; }
 function cleanRate(v){ return String(+Number(v).toFixed(3)); }   // 60.739999999999995 -> 60.74
 
@@ -1553,9 +2020,10 @@ function pdfCell(col, v){
     if(KG3_COLS.indexOf(col) !== -1) return '<td class="n" dir="ltr">'+v.toFixed(3)+'</td>';
     return '<td class="n" dir="ltr">'+num2(v)+'</td>';
   }
+  if(col === 'CTime') return '<td dir="ltr">'+esc(v)+'</td>';
   return '<td dir="auto">'+esc(v)+'</td>';
 }
-function pdfPage(cols, rowsHtml, pageNo, pageCount, extraClass, titleHtml, widths){
+function pdfPage(cols, rowsHtml, pageNo, pageCount, extraClass, titleHtml, widths, sub){
   const rtl = LANG === 'ckb';
   const W = Object.assign({}, PDF_COL_W, widths || {});
   const range = rangeText();
@@ -1566,7 +2034,7 @@ function pdfPage(cols, rowsHtml, pageNo, pageCount, extraClass, titleHtml, width
   el.setAttribute('dir', rtl ? 'rtl' : 'ltr');
   el.innerHTML =
     '<style>'+PDF_CSS+'</style>'+
-    '<div class="pdf-title"><div class="t1">'+titleHtml+'</div><div class="t2">'+ltrSpan(range)+'  ·  '+ltrSpan(ymd(new Date()))+'</div></div>'+
+    '<div class="pdf-title"><div class="t1">'+titleHtml+'</div><div class="t2">'+(sub != null ? esc(sub) : ltrSpan(range))+'  ·  '+ltrSpan(ymd(new Date()))+'</div></div>'+
     '<table>'+colgroup+'<thead><tr>'+cols.map(c => '<th>'+esc(exportLabel(c))+'</th>').join('')+'</tr></thead><tbody>'+rowsHtml+'</tbody></table>'+
     (pageCount ? '<div class="pdf-foot" dir="ltr">'+pageNo+' / '+pageCount+'</div>' : '');
   return el;
@@ -1589,7 +2057,7 @@ async function generatePdf(btnSel, sections, fileName){
       if(!sec.rows.length) continue;
       const cols = Object.keys(sec.rows[0]);
       const rowHtml = sec.rows.map(r => '<tr>' + cols.map(c => pdfCell(c, r[c])).join('') + '</tr>');
-      const probe = pdfPage(cols, rowHtml.join(''), 0, 0, 'measure', sec.titleHtml, sec.widths);
+      const probe = pdfPage(cols, rowHtml.join(''), 0, 0, 'measure', sec.titleHtml, sec.widths, sec.sub);
       document.body.appendChild(probe); stage.push(probe);
       const rowH = Array.from(probe.querySelectorAll('tbody tr')).map(tr => tr.getBoundingClientRect().height);
       const headH = probe.querySelector('thead').getBoundingClientRect().height;
@@ -1610,7 +2078,7 @@ async function generatePdf(btnSel, sections, fileName){
     const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4', compress: true });
     for(let i = 0; i < allPages.length; i++){
       const pg = allPages[i];
-      const pageEl = pdfPage(pg.cols, pg.rows.join(''), i + 1, allPages.length, '', pg.sec.titleHtml, pg.sec.widths);
+      const pageEl = pdfPage(pg.cols, pg.rows.join(''), i + 1, allPages.length, '', pg.sec.titleHtml, pg.sec.widths, pg.sec.sub);
       document.body.appendChild(pageEl); stage.push(pageEl);
       const canvas = await html2canvas(pageEl, { scale: 2, backgroundColor: '#ffffff', logging: false, width: PDF_W, height: PDF_H, windowWidth: PDF_W });
       if(i > 0) doc.addPage();
