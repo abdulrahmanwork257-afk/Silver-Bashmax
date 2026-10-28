@@ -1080,7 +1080,7 @@ async function submitNewEmployee(){
   try{
     const cred = await secondary.auth().createUserWithEmailAndPassword(toEmail(username), password);
     const role = document.getElementById('ne-role').value;
-    await db.collection('employees').doc(cred.user.uid).set({ username, fullName, role, tabName: role === 'hr' ? 'HR' : fullName });
+    await db.collection('employees').doc(cred.user.uid).set({ username, fullName, role, tabName: role === 'hr' ? 'HR-' + username.toLowerCase().replace(/\s+/g,'') : fullName });   // unique tab per HR account
     await secondary.auth().signOut();
     await secondary.delete();
     closeAddEmployee();
@@ -1179,7 +1179,7 @@ async function buildSidebar(){
     allBtn.onclick = (ev) => switchTab('ALL', ev.target);
     list.appendChild(allBtn);
     addSelectOption(select, 'ALL', t('allEmployees'));
-    employees.filter(emp => emp.role !== 'hr').forEach(emp => {
+    employees.slice().sort((x, y) => ({ admin:0, employee:1, hr:2 }[x.role] - { admin:0, employee:1, hr:2 }[y.role])).forEach(emp => {   // everyone is listed, HR too (after the employees)
       const b = document.createElement('button');
       b.className = 'tab-btn' + (viewingTab===emp.tabName ? ' active' : '');
       b.textContent = emp.fullName;
