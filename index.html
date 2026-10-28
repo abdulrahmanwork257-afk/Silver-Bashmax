@@ -9,7 +9,8 @@
 <link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#07101c">
+<meta name="theme-color" content="#EEF2F7" id="meta-theme">
+<script>try{var __t=localStorage.getItem('sbl_theme');if(__t==="dark"||__t==="red")document.documentElement.setAttribute("data-theme",__t);}catch(e){}</script>
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Ledger">
@@ -39,15 +40,62 @@
     --green-bg:rgba(52,199,89,.16); --green-fg:#1C7C33;
     --red-bg:rgba(255,59,48,.14); --red-fg:#C62828;
     --radius:20px; --radius-sm:14px; --radius-xs:10px;
+    --surface:rgba(255,255,255,.5); --surface-2:rgba(255,255,255,.7); --surface-strong:#fff;
+    --gold-hover:#A4780A; --gold-text:#B8860B; --bg3:#ffffff;
+    --glow1:rgba(216,169,58,.10); --glow2:rgba(90,140,220,.08);
+    --inset:rgba(255,255,255,.5); --shadow:0 10px 30px rgba(31,38,135,.08);
+    --grid:rgba(0,0,0,.06); --option-bg:#fff; --tv-bg:#fff;
   }
+  :root[data-theme='dark']{
+    color-scheme:dark;
+    --bg1:#0A0C11; --bg2:#10131A; --bg3:#0A0C11;
+    --glass:rgba(28,32,42,.66); --glass-strong:rgba(42,47,60,.88);
+    --border:rgba(255,255,255,.10); --border-soft:rgba(255,255,255,.11);
+    --ink:#F5F5F7; --muted:#B0B0BB; --muted-2:#8E8E9A;
+    --gold:#B07D0C; --gold-soft:#E0B04F; --gold-ghost:rgba(224,176,79,.20); --gold-hover:#C48D12; --gold-text:#E8BC5E;
+    --green-bg:rgba(52,199,89,.22); --green-fg:#62E585; --red-bg:rgba(255,69,58,.22); --red-fg:#FF8077;
+    --surface:rgba(255,255,255,.06); --surface-2:rgba(255,255,255,.09); --surface-strong:rgba(255,255,255,.16);
+    --glow1:rgba(224,176,79,.08); --glow2:rgba(90,140,220,.07);
+    --inset:rgba(255,255,255,.06); --shadow:0 10px 30px rgba(0,0,0,.45);
+    --grid:rgba(255,255,255,.09); --option-bg:#1B1F29; --tv-bg:#131722;
+  }
+  :root[data-theme='red']{
+    color-scheme:dark;
+    --bg1:#16040A; --bg2:#260A12; --bg3:#16040A;
+    --glass:rgba(64,14,24,.64); --glass-strong:rgba(88,22,34,.88);
+    --border:rgba(255,255,255,.12); --border-soft:rgba(255,255,255,.13);
+    --ink:#FFF3F3; --muted:#E2B3B8; --muted-2:#C48F96;
+    --gold:#C2354A; --gold-soft:#F0687B; --gold-ghost:rgba(240,104,123,.22); --gold-hover:#D94459; --gold-text:#FF8E9C;
+    --green-bg:rgba(80,220,140,.22); --green-fg:#74EBA4; --red-bg:rgba(255,130,130,.22); --red-fg:#FFA3A3;
+    --surface:rgba(255,255,255,.07); --surface-2:rgba(255,255,255,.10); --surface-strong:rgba(255,255,255,.17);
+    --glow1:rgba(240,104,123,.12); --glow2:rgba(160,40,70,.12);
+    --inset:rgba(255,255,255,.07); --shadow:0 10px 30px rgba(0,0,0,.5);
+    --grid:rgba(255,255,255,.10); --option-bg:#2A0C14; --tv-bg:#1B0A10;
+  }
+  option{background:var(--option-bg);color:var(--ink);}
+  input::placeholder,textarea::placeholder{color:var(--muted-2);}
+  /* theme swatches (next to the logo) */
+  .theme-switch{display:flex;gap:8px;align-items:center;margin:0 0 12px;}
+  .theme-switch button.th{width:22px;height:22px;padding:0;border-radius:50%;border:2px solid transparent;box-shadow:0 0 0 1px var(--border-soft);flex-shrink:0;}
+  .theme-switch button.th-light,.theme-switch button.th-light:hover{background:linear-gradient(135deg,#ffffff 50%,#D8A93A 50%);}
+  .theme-switch button.th-dark,.theme-switch button.th-dark:hover{background:linear-gradient(135deg,#12151C 50%,#E0B04F 50%);}
+  .theme-switch button.th-red,.theme-switch button.th-red:hover{background:linear-gradient(135deg,#3A0A12 50%,#E0475B 50%);}
+  .theme-switch button.th.active{border-color:var(--gold-text);transform:scale(1.12);}
+  .theme-switch.login-theme{justify-content:center;margin-bottom:16px;}
+  /* manage users */
+  .user-row{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end;padding:10px 0;border-bottom:1px solid var(--border-soft);}
+  .user-row .uname{grid-column:1/-1;font-size:12px;color:var(--muted);}
+  .user-row input,.user-row select{margin-bottom:0;}
+  .user-row .ustatus{grid-column:1/-1;font-size:12px;min-height:14px;}
+  .ustatus.ok{color:var(--green-fg);} .ustatus.bad{color:var(--red-fg);}
   *{box-sizing:border-box;}
   body{
     margin:0;min-height:100vh;color:var(--ink);
     font-family:-apple-system,BlinkMacSystemFont,'Inter',sans-serif;
     background:
-      radial-gradient(circle at 15% 0%, rgba(216,169,58,.10), transparent 45%),
-      radial-gradient(circle at 100% 20%, rgba(90,140,220,.08), transparent 40%),
-      linear-gradient(160deg,var(--bg1),var(--bg2) 55%,#ffffff);
+      radial-gradient(circle at 15% 0%, var(--glow1), transparent 45%),
+      radial-gradient(circle at 100% 20%, var(--glow2), transparent 40%),
+      linear-gradient(160deg,var(--bg1),var(--bg2) 55%,var(--bg3));
     background-attachment:fixed;
   }
   body[dir='rtl']{font-family:'Noto Sans Arabic',-apple-system,sans-serif;}
@@ -59,7 +107,7 @@
   .glass{
     background:var(--glass); backdrop-filter:blur(26px) saturate(180%); -webkit-backdrop-filter:blur(26px) saturate(180%);
     border:1px solid var(--border); border-radius:var(--radius);
-    box-shadow:0 10px 30px rgba(31,38,135,.08), inset 0 1px 0 rgba(255,255,255,.5);
+    box-shadow:var(--shadow), inset 0 1px 0 var(--inset);
   }
 
   .login-logo{display:block;width:104px;height:104px;margin:0 auto 18px;border-radius:50%;box-shadow:0 8px 22px rgba(0,0,0,.22);}
@@ -71,23 +119,23 @@
   .login-card p{color:var(--muted);margin:0 0 26px;font-size:14px;text-align:center;}
   label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:600;}
   input,select,textarea{
-    width:100%;background:rgba(255,255,255,.7);border:1px solid var(--border-soft);color:var(--ink);
+    width:100%;background:var(--surface-2);border:1px solid var(--border-soft);color:var(--ink);
     padding:12px 14px;border-radius:var(--radius-sm);font-size:14px;font-family:inherit;margin-bottom:16px;
   }
-  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold-soft);background:#fff;}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold-soft);background:var(--surface-strong);}
   input:hover,select:hover{border-color:var(--gold-soft);}
   button{
     background:var(--gold);color:#fff;border:none;padding:12px 20px;border-radius:999px;
     font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:transform .12s,background .15s;
   }
-  button:hover{background:#A4780A;}
+  button:hover{background:var(--gold-hover);}
   button:active{transform:scale(.97);}
   button.secondary{background:var(--glass-strong);color:var(--ink);border:1px solid var(--border-soft);}
-  button.secondary:hover{background:#fff;}
-  button.ghost{background:transparent;color:var(--gold);border:1px solid var(--gold-ghost);padding:8px 14px;font-size:13px;}
+  button.secondary:hover{background:var(--surface-strong);}
+  button.ghost{background:transparent;color:var(--gold-text);border:1px solid var(--gold-ghost);padding:8px 14px;font-size:13px;}
   button.danger{background:transparent;color:var(--red-fg);border:1px solid rgba(255,59,48,.3);padding:7px 12px;font-size:12px;}
   button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--gold);outline-offset:1px;}
-  .link-btn{background:none;border:none;color:var(--gold);font-size:13px;cursor:pointer;padding:0;text-decoration:underline;}
+  .link-btn{background:none;border:none;color:var(--gold-text);font-size:13px;cursor:pointer;padding:0;text-decoration:underline;}
   .error{color:var(--red-fg);font-size:13px;margin:-8px 0 16px;}
   .hint{color:var(--muted-2);font-size:12px;margin-top:-8px;margin-bottom:16px;}
 
@@ -99,23 +147,23 @@
   .sidebar .brand{font-size:17px;color:var(--ink);margin-bottom:2px;}
   .sidebar .who{font-size:12px;color:var(--muted);margin-bottom:20px;}
   .lang-switch{display:flex;gap:6px;margin-bottom:18px;}
-  .lang-switch button{flex:1;padding:7px 8px;font-size:12px;background:rgba(255,255,255,.5);color:var(--muted);border:1px solid var(--border-soft);}
+  .lang-switch button{flex:1;padding:7px 8px;font-size:12px;background:var(--surface);color:var(--muted);border:1px solid var(--border-soft);}
   .lang-switch button.active{background:var(--gold);color:#fff;border-color:var(--gold);}
   #tab-list{flex:1;overflow-y:auto;}
   #tab-select{display:none;}
   .tab-btn{display:block;width:100%;text-align:inherit;background:none;border:none;color:var(--ink);
     padding:10px 12px;border-radius:var(--radius-xs);font-size:14px;margin-bottom:3px;cursor:pointer;}
-  .tab-btn:hover{background:rgba(255,255,255,.6);}
+  .tab-btn:hover{background:var(--surface);}
   .tab-btn.active{background:var(--gold);color:#fff;font-weight:600;}
   .sidebar .signout{margin-top:16px;font-size:13px;color:var(--muted);cursor:pointer;text-align:center;padding:8px;border-radius:var(--radius-xs);}
-  .sidebar .signout:hover{background:rgba(255,255,255,.6);}
+  .sidebar .signout:hover{background:var(--surface);}
 
   .main{flex:1;min-width:0;padding:32px 36px;max-width:1120px;}
   .main h2{font-size:23px;}
   .subhead{color:var(--muted);font-size:13px;margin:4px 0 22px;}
 
   .range-row{display:flex;gap:8px;align-items:end;margin-bottom:20px;flex-wrap:wrap;}
-  .range-row button.chip{background:rgba(255,255,255,.55);color:var(--ink);border:1px solid var(--border-soft);
+  .range-row button.chip{background:var(--surface);color:var(--ink);border:1px solid var(--border-soft);
     padding:8px 14px;font-size:13px;font-weight:500;border-radius:999px;}
   .range-row button.chip.active{background:var(--gold);color:#fff;border-color:var(--gold);}
   .range-row input[type=date]{margin-bottom:0;width:auto;}
@@ -124,7 +172,7 @@
   .way-card{padding:20px;}
   .way-card h3{font-size:14px;color:var(--ink);margin-bottom:14px;}
   .way-card .rows{display:flex;flex-direction:column;gap:10px;}
-  .way-card .leg{display:flex;justify-content:space-between;align-items:baseline;padding:10px 12px;background:rgba(255,255,255,.5);border-radius:var(--radius-xs);}
+  .way-card .leg{display:flex;justify-content:space-between;align-items:baseline;padding:10px 12px;background:var(--surface);border-radius:var(--radius-xs);}
   .way-card .leg .label{font-size:12px;color:var(--muted);}
   .way-card .leg .val{font-size:16px;font-weight:700;}
   .way-card .leg .amt{font-size:12px;color:var(--muted-2);display:block;text-align:end;}
@@ -152,8 +200,8 @@
   .dp-grid{display:grid;grid-template-columns:repeat(7,1fr);grid-auto-rows:36px;gap:4px;direction:ltr;}
   .dp-dow{display:flex;align-items:center;justify-content:center;}
   .dp-dow{font-size:10px;color:var(--muted);text-align:center;padding:2px 0;}
-  .dp-day{position:relative;background:rgba(255,255,255,.6);color:var(--ink);border:1px solid var(--border-soft);border-radius:10px;padding:0;height:36px;font-size:13px;font-weight:500;}
-  .dp-day:hover{background:#fff;}
+  .dp-day{position:relative;background:var(--surface);color:var(--ink);border:1px solid var(--border-soft);border-radius:10px;padding:0;height:36px;font-size:13px;font-weight:500;}
+  .dp-day:hover{background:var(--surface-strong);}
   .dp-day.empty{visibility:hidden;}
   .dp-day.has::after{content:'';position:absolute;bottom:4px;left:50%;width:4px;height:4px;margin-left:-2px;border-radius:50%;background:var(--gold-soft);}
   .dp-day.sel{background:var(--gold);color:#fff;border-color:var(--gold);}
@@ -163,7 +211,7 @@
   .dp-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:12px;flex-wrap:wrap;}
   .dp-count{font-size:12px;color:var(--muted);}
   #dates-summary{display:none;align-items:center;gap:6px;flex-wrap:wrap;margin:-8px 0 14px;font-size:12px;color:var(--muted);}
-  #dates-summary .dchip{background:var(--gold-ghost);color:var(--gold);border-radius:999px;padding:3px 10px;font-weight:600;}
+  #dates-summary .dchip{background:var(--gold-ghost);color:var(--gold-text);border-radius:999px;padding:3px 10px;font-weight:600;}
   #dates-summary button{padding:3px 10px;font-size:12px;}
 
   /* ---- charts ---- */
@@ -171,7 +219,7 @@
   .chart-head h3{margin:0;}
   .chart-controls{display:flex;gap:8px;flex-wrap:wrap;}
   .chart-controls select,.chart-metric select{width:auto;margin:0;padding:7px 10px;font-size:13px;border-radius:999px;}
-  .chart-card{background:rgba(255,255,255,.45);border:1px solid var(--border-soft);border-radius:var(--radius-sm);padding:14px;margin-bottom:12px;}
+  .chart-card{background:var(--surface);border:1px solid var(--border-soft);border-radius:var(--radius-sm);padding:14px;margin-bottom:12px;}
   .chart-card:last-child{margin-bottom:0;}
   .chart-card h4{margin:0 0 8px;font-size:13px;color:var(--ink);}
   .chart-card .chart-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;flex-wrap:wrap;}
@@ -182,11 +230,11 @@
 
   /* ---- full-screen pages (calculator, live chart) ---- */
   .nav-tools{display:flex;flex-direction:column;gap:6px;margin-bottom:14px;}
-  .tool-btn{display:flex;align-items:center;gap:10px;width:100%;background:rgba(255,255,255,.55);color:var(--ink);border:1px solid var(--border-soft);padding:9px 12px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;text-align:start;}
-  .tool-btn:hover{background:#fff;}
-  .tool-btn svg{width:20px;height:20px;flex-shrink:0;stroke:var(--gold);}
+  .tool-btn{display:flex;align-items:center;gap:10px;width:100%;background:var(--surface);color:var(--ink);border:1px solid var(--border-soft);padding:9px 12px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;text-align:start;}
+  .tool-btn:hover{background:var(--surface-strong);}
+  .tool-btn svg{width:20px;height:20px;flex-shrink:0;stroke:var(--gold-text);}
   .page{display:none;position:fixed;inset:0;z-index:40;overflow-y:auto;-webkit-overflow-scrolling:touch;
-    background:radial-gradient(circle at 15% 0%, rgba(216,169,58,.10), transparent 45%),linear-gradient(160deg,var(--bg1),var(--bg2) 55%,#ffffff);}
+    background:radial-gradient(circle at 15% 0%, var(--glow1), transparent 45%),linear-gradient(160deg,var(--bg1),var(--bg2) 55%,var(--bg3));}
   .page.open{display:block;}
   .page-head{position:sticky;top:0;z-index:3;display:flex;align-items:center;gap:12px;padding:10px 16px;background:var(--glass-strong);
     backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--border-soft);}
@@ -196,24 +244,24 @@
   body[dir='rtl'] .back-btn svg{transform:scaleX(-1);}
   .page-body{max-width:1000px;margin:0 auto;padding:16px;}
   .seg{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;}
-  .seg-btn{background:rgba(255,255,255,.55);color:var(--ink);border:1px solid var(--border-soft);padding:8px 16px;font-size:13px;}
+  .seg-btn{background:var(--surface);color:var(--ink);border:1px solid var(--border-soft);padding:8px 16px;font-size:13px;}
   .seg-btn.active{background:var(--gold);color:#fff;border-color:var(--gold);}
-  .calc-display{background:rgba(255,255,255,.7);border:1px solid var(--border-soft);border-radius:var(--radius-sm);padding:12px 16px;margin-bottom:12px;text-align:right;direction:ltr;min-height:78px;}
+  .calc-display{background:var(--surface-2);border:1px solid var(--border-soft);border-radius:var(--radius-sm);padding:12px 16px;margin-bottom:12px;text-align:right;direction:ltr;min-height:78px;}
   #calc-expr{font-size:14px;color:var(--muted);min-height:20px;word-break:break-all;}
   #calc-out{font-size:32px;font-weight:700;margin-top:2px;word-break:break-all;}
   .keypad{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;max-width:420px;margin:0 auto;direction:ltr;}
-  .keypad button{padding:0;height:54px;font-size:20px;font-weight:600;background:rgba(255,255,255,.75);color:var(--ink);border:1px solid var(--border-soft);border-radius:16px;}
-  .keypad button:hover{background:#fff;}
-  .keypad button.op{background:var(--gold-ghost);color:var(--gold);}
-  .keypad button.fn{background:rgba(0,0,0,.05);}
+  .keypad button{padding:0;height:54px;font-size:20px;font-weight:600;background:var(--surface-2);color:var(--ink);border:1px solid var(--border-soft);border-radius:16px;}
+  .keypad button:hover{background:var(--surface-strong);}
+  .keypad button.op{background:var(--gold-ghost);color:var(--gold-text);}
+  .keypad button.fn{background:var(--surface);}
   .keypad button.eq{background:var(--gold);color:#fff;grid-column:span 3;}
   .keypad button.z{grid-column:span 2;}
-  .hist-item{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;padding:10px 12px;background:rgba(255,255,255,.5);border-radius:var(--radius-xs);margin-bottom:8px;}
+  .hist-item{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;padding:10px 12px;background:var(--surface);border-radius:var(--radius-xs);margin-bottom:8px;}
   .hist-item .meta{font-size:11px;color:var(--muted);}
   .hist-item .expr{font-size:13px;word-break:break-word;}
   .hist-item .res{font-size:14px;font-weight:700;word-break:break-word;}
-  .badge{display:inline-block;font-size:10px;font-weight:700;border-radius:999px;padding:1px 8px;background:var(--gold-ghost);color:var(--gold);margin-inline-end:6px;}
-  .tv-box{height:calc(100vh - 150px);min-height:420px;border-radius:var(--radius-sm);overflow:hidden;background:#fff;border:1px solid var(--border-soft);}
+  .badge{display:inline-block;font-size:10px;font-weight:700;border-radius:999px;padding:1px 8px;background:var(--gold-ghost);color:var(--gold-text);margin-inline-end:6px;}
+  .tv-box{height:calc(100vh - 150px);min-height:420px;border-radius:var(--radius-sm);overflow:hidden;background:var(--tv-bg);border:1px solid var(--border-soft);}
   .tv-syms{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center;}
   input[type=search]{margin-bottom:12px;}
   .rr-break{display:none;}
@@ -226,7 +274,7 @@
   table{width:100%;border-collapse:collapse;font-size:13px;}
   th{text-align:inherit;color:var(--muted);font-weight:600;padding:9px 10px;border-bottom:1px solid var(--border-soft);white-space:nowrap;}
   td{padding:9px 10px;border-bottom:1px solid var(--border-soft);white-space:nowrap;}
-  tr:hover td{background:rgba(255,255,255,.5);}
+  tr:hover td{background:var(--surface);}
   .row-actions button{margin-inline-end:6px;}
   .empty{color:var(--muted);font-size:13px;padding:24px 0;text-align:center;}
   #table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
@@ -241,6 +289,8 @@
     .sidebar .brand{white-space:nowrap;font-size:15px;margin:0;}
     .side-logo{width:36px;height:36px;margin:0;flex-shrink:0;}
     .sidebar .who{display:none;}
+    .theme-switch{margin:0;}
+    .user-row{grid-template-columns:1fr;}
     .nav-tools{flex-direction:row;margin:0;width:auto;flex-shrink:0;}
     .tool-btn{width:auto;padding:8px;border-radius:50%;}
     .tool-btn span{display:none;}
@@ -310,6 +360,7 @@
 <!-- ============ LOGIN ============ -->
 <div id="login-screen">
   <div class="login-card glass">
+    <div class="theme-switch login-theme"></div>
     <img class="login-logo" src="logo.png" alt="" onerror="this.style.display='none'">
     <h1 data-i18n="brand">Suly / Buzan Ledger</h1>
     <p data-i18n="loginSub">Sign in to record and review transactions.</p>
@@ -345,6 +396,7 @@
   <div class="sidebar glass">
     <img class="side-logo" src="logo.png" alt="" onerror="this.style.display='none'">
     <div class="brand" data-i18n="brand">Suly / Buzan</div>
+    <div class="theme-switch" style="margin-top:8px;"></div>
     <div class="who" id="who"></div>
     <div class="lang-switch"><button id="lang-en" onclick="setLang('en')">English</button><button id="lang-ckb" onclick="setLang('ckb')">کوردی</button></div>
     <div class="nav-tools">
@@ -353,7 +405,7 @@
     </div>
     <div id="tab-list"></div>
     <select id="tab-select" onchange="switchTab(this.value)"></select>
-    <div id="add-employee-link" style="display:none;"><button class="ghost" style="width:100%;margin-bottom:10px;" onclick="openAddEmployee()" data-i18n="addEmployee">+ Add employee</button></div>
+    <div id="add-employee-link" style="display:none;"><button class="ghost" style="width:100%;margin-bottom:6px;" onclick="openAddEmployee()" data-i18n="addEmployee">+ Add employee</button><button class="ghost" style="width:100%;margin-bottom:10px;" onclick="openUsers()" data-i18n="manageUsers">Manage users</button></div>
     <div class="signout" onclick="signOut()" data-i18n="signOut">Sign out</div>
   </div>
 
@@ -510,6 +562,37 @@
         <div class="computed-row" id="pvs-sum"></div>
         <div class="pv-wrap" id="pvs-table"></div>
       </div>
+
+      <div class="panel glass">
+        <h3 data-i18n="pvBuzanTitle">Buzan only: buy / sell</h3>
+        <div class="subhead" style="margin-top:-8px;" data-i18n="pvBuzanHint"></div>
+        <div class="pv-buzan-edit" id="pvb-form">
+          <input type="hidden" id="pvb-id">
+          <div class="form-grid">
+            <div><label data-i18n="date">Date</label><input type="date" id="pvb-date"></div>
+            <div><label data-i18n="type">Type</label>
+              <select id="pvb-side" onchange="updatePvBuzan()"><option value="buy" data-i18n="sideBuy">Buy from Buzan</option><option value="sell" data-i18n="sideSell">Sell to Buzan</option></select></div>
+            <div><label data-i18n="kg">KG</label><input type="number" step="any" inputmode="decimal" id="pvb-kg" oninput="updatePvBuzan()"></div>
+            <div><label data-i18n="party">Other side / name</label><input type="text" id="pvb-party"></div>
+            <div><label data-i18n="rate">Rate (per troy oz)</label><input type="number" step="any" inputmode="decimal" id="pvb-rate" oninput="updatePvBuzan()"></div>
+            <div><label data-i18n="price">Negotiated price (per KG)</label><input type="number" step="any" inputmode="decimal" id="pvb-price" oninput="updatePvBuzan()"></div>
+            <div class="full"><label data-i18n="notes">Notes</label><input type="text" id="pvb-notes"></div>
+          </div>
+          <div class="computed-row">
+            <div data-i18n="ounce">Ounce<span class="num" id="pvb-c-ounce">0.00</span></div>
+            <div data-i18n="colMarket">Buzan<span class="num" id="pvb-c-market">$0.00</span></div>
+            <div data-i18n="margin">Margin<span class="num" id="pvb-c-margin"><span class="margin-pill">$0.00</span></span></div>
+            <div data-i18n="plKg">P/L × KG<span class="num" id="pvb-c-pl">$0.00</span></div>
+            <div data-i18n="total">Total<span class="num" id="pvb-c-total">$0.00</span></div>
+          </div>
+          <div class="pv-form-actions">
+            <button onclick="submitPvBuzan()" data-i18n="save">Save</button>
+            <button class="secondary" id="pvb-cancel" style="display:none;" onclick="resetPvBuzan()" data-i18n="cancelEdit">Cancel edit</button>
+          </div>
+        </div>
+        <div class="computed-row" id="pvb-sum"></div>
+        <div class="pv-wrap" id="pvb-table"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -656,6 +739,16 @@
   </div>
 </div>
 
+<!-- ============ MANAGE USERS MODAL ============ -->
+<div id="users-modal" class="dp-backdrop" onclick="if(event.target===this)closeUsers()">
+  <div class="glass" style="max-width:580px;width:100%;padding:22px;max-height:88vh;overflow:auto;">
+    <h3 style="margin-bottom:6px;" data-i18n="manageUsers">Manage users</h3>
+    <div class="subhead" style="margin:0 0 8px;" data-i18n="usersHint">Change a person's display name or role.</div>
+    <div id="users-list"></div>
+    <div style="text-align:end;margin-top:14px;"><button class="secondary" onclick="closeUsers()" data-i18n="close">Close</button></div>
+  </div>
+</div>
+
 <!-- ============ ADD EMPLOYEE MODAL ============ -->
 <div id="add-employee-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:50;align-items:center;justify-content:center;padding:20px;">
   <div class="glass" style="max-width:380px;width:100%;padding:28px;">
@@ -714,10 +807,17 @@ function effMargin(r){
   if(r.type === GRANT_SULY || r.type === GRANT_BUZAN) return 0;
   return marginFor(r.type, r.negotiatedPrice, r.marketPrice);
 }
-function viewTitle(){ return viewingTab === 'ALL' ? t('combinedTitle') : viewingTab === 'PRIVATE' ? t('privateDesk') : viewingTab; }
+function nameOf(tab){
+  if(tab == null) return '';
+  const e = employees.find(x => x.tabName === tab);
+  if(e && e.fullName) return e.fullName;
+  if(session && session.tabName === tab && session.fullName) return session.fullName;
+  return tab;
+}
+function viewTitle(){ return viewingTab === 'ALL' ? t('combinedTitle') : viewingTab === 'PRIVATE' ? t('privateDesk') : nameOf(viewingTab); }
 function fmtMoney(n){ return '$' + round2(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); }
 function round2(n){ return Math.round((Number(n)||0) * 100) / 100; }
-function fmtSigned(n){ const v = round2(n); return (v >= 0 ? '+' : '-') + '$' + Math.abs(v).toFixed(2); }
+function fmtSigned(n){ const v = round2(n); return (v >= 0 ? '+' : '-') + '$' + Math.abs(v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); }
 
 const OUNCE_DIVISOR = 155.52;
 const TROY_OUNCE_GRAMS = 31.103479;
@@ -758,6 +858,12 @@ const I18N = {
     plKg: 'P/L × KG', colPlKg: 'P/L × KG', netProfit: 'Net profit (per KG left in shop)', netProfitClosed: 'Profit on completed buy & sell (without remaining KG)', netProfitOpen: 'Profit on remaining KG only', toSell: 'left to sell', toBuy: 'left to buy back',
     roleLabel: 'Role', roleEmployee: 'Employee (own tab, view only)', roleHr: 'HR (view & download everything, no editing)', hrSub: 'View and download only — HR cannot add or change data.',
     exportFailed: 'Could not create the PDF.',
+    themeLight: 'Light', themeDark: 'Dark', themeRed: 'Dark red',
+    manageUsers: 'Manage users', usersHint: "Change a person's display name or role. Their records stay linked to the account, so renaming is safe. A role change applies the next time that person signs in.",
+    roleAdmin: 'Admin', close: 'Close', savedOk: 'Saved', nameRequired: 'Enter a name.',
+    pvBuzanTitle: 'Buzan only: buy / sell', pvBuzanHint: 'Buy from or sell directly to Buzan only (not through Suly). Kept apart from the Suly accounts. Admin and HR can enter and edit.',
+    sideBuy: 'Buy from Buzan', sideSell: 'Sell to Buzan', avgBuyPrice: 'Avg buy price', avgSellPrice: 'Avg sell price', pvLeftBuzan: 'Balance (KG)',
+    pvFillBuzan: 'Fill in date, KG, rate and price.',
     calcTitle: 'Calculator', liveChartTitle: 'Live silver chart', back: 'Back', calcNote: 'Only for you — nothing here is counted in the real accounts.',
     tabBasic: 'Calculator', tabTrade: 'Trade calc', tabConvert: 'Converter', targetMargin: 'Target margin per KG (optional)',
     noteOpt: 'Note (optional)', priceToQuote: 'Price to quote', saveCalc: 'Save calculation', gram: 'Gram', troyOz: 'Troy ounce',
@@ -821,6 +927,12 @@ const I18N = {
     plKg: 'قازانج/زیان × کیلۆ', colPlKg: 'قازانج/زیان × کیلۆ', netProfit: 'قازانجی ڕاستەقینە (بۆ هەر کیلۆی ماوە لە دووکان)', netProfitClosed: 'قازانجی کڕین و فرۆشتنی تەواوبوو (بەبێ کیلۆی ماوە)', netProfitOpen: 'قازانجی تەنها ئەو کیلۆیانەی ماونەتەوە', toSell: 'ماوە بۆ فرۆشتن', toBuy: 'ماوە بۆ کڕین',
     roleLabel: 'ڕۆڵ', roleEmployee: 'کارمەند (تەنها لاپەڕەی خۆی، تەنها بینین)', roleHr: 'سەرچاوە مرۆییەکان (بینین و داگرتنی هەموو شتێک، بێ دەستکاری)', hrSub: 'تەنها بینین و داگرتن — سەرچاوە مرۆییەکان ناتوانن زانیاری زیاد بکەن یان بیگۆڕن.',
     exportFailed: 'نەتوانرا PDF دروست بکرێت.',
+    themeLight: 'ڕووناک', themeDark: 'تاریک', themeRed: 'سووری تۆخ',
+    manageUsers: 'بەڕێوەبردنی بەکارهێنەران', usersHint: 'ناوی پیشاندراو یان ڕۆڵی کەسێک بگۆڕە. تۆمارەکانیان بە هەژمارەکەیانەوە بەستراون، بۆیە گۆڕینی ناو بێ مەترسییە. گۆڕینی ڕۆڵ لە جاری داهاتووی چوونەژوورەوەی ئەو کەسەدا کار دەکات.',
+    roleAdmin: 'بەڕێوەبەر', close: 'داخستن', savedOk: 'پاشەکەوت کرا', nameRequired: 'ناوێک بنووسە.',
+    pvBuzanTitle: 'بوزان تەنها: کڕین / فرۆشتن', pvBuzanHint: 'کڕین لە بوزان یان فرۆشتن بە بوزان بەتەنها (نەک لە ڕێگەی سلێمانییەوە). لە هەژمارەکانی سلێمانی جیایە. بەڕێوەبەر و سەرچاوە مرۆییەکان دەتوانن تۆمار بکەن و دەستکاری بکەن.',
+    sideBuy: 'کڕین لە بوزان', sideSell: 'فرۆشتن بە بوزان', avgBuyPrice: 'تێکڕای نرخی کڕین', avgSellPrice: 'تێکڕای نرخی فرۆشتن', pvLeftBuzan: 'ماوە (کیلۆ)',
+    pvFillBuzan: 'بەروار، کیلۆ، نرخ و بەها پڕبکەرەوە.',
     calcTitle: 'ژمێرەر', liveChartTitle: 'هێڵکاری زیندووی زیو', back: 'گەڕانەوە', calcNote: 'تەنها بۆ خۆتە — هیچ شتێک لێرە ناخرێتە ناو هەژمارە ڕاستەقینەکان.',
     tabBasic: 'ژمێرەر', tabTrade: 'ژمێرەری مامەڵە', tabConvert: 'گۆڕەر', targetMargin: 'قازانجی مەبەست بۆ هەر کیلۆیەک (ئارەزوومەندانە)',
     noteOpt: 'تێبینی (ئارەزوومەندانە)', priceToQuote: 'نرخی پێشنیارکراو', saveCalc: 'پاشەکەوتکردنی ژماردن', gram: 'گرام', troyOz: 'ئۆنسی تروی',
@@ -872,6 +984,7 @@ function applyStaticTranslations(){
 function setLang(lang){
   LANG = lang; localStorage.setItem('sbl_lang', lang);
   applyStaticTranslations();
+  buildThemeSwitches();
   if(session){
     document.getElementById('viewing-sub').textContent = subText();
     document.getElementById('viewing-title').textContent = viewTitle();
@@ -1045,6 +1158,7 @@ async function enterApp(){
   document.getElementById('viewing-title').textContent = viewTitle();
   document.getElementById('viewing-sub').textContent = subText();
   await buildSidebar();
+  document.getElementById('viewing-title').textContent = viewTitle();
   document.getElementById('f-date').value = ymd(new Date());
   setRange('today');
 }
@@ -1057,7 +1171,7 @@ async function buildSidebar(){
   if(canBrowseAll()){
     if(!employees.length){
       const snap = await db.collection('employees').get();
-      employees = snap.docs.map(d => d.data());
+      employees = snap.docs.map(d => Object.assign({ uid: d.id }, d.data()));
     }
     const allBtn = document.createElement('button');
     allBtn.className = 'tab-btn' + (viewingTab==='ALL' ? ' active' : '');
@@ -1374,7 +1488,7 @@ function renderTable(){
       else if(r.type === GRANT_SULY) wayLabel = '+' + t('grantSuly');
       else wayLabel = '+' + t('grantBuzan');
       html += '<tr'+(isGrant?' style="background:rgba(184,134,11,.06);"':'')+'>'+
-        (showEmployee ? '<td>'+esc(r.tabName)+'</td>' : '')+
+        (showEmployee ? '<td>'+esc(nameOf(r.tabName))+'</td>' : '')+
         '<td>'+wayLabel+'</td>'+
         '<td class="num">'+Number(r.kg).toFixed(2)+'</td>';
       if(isGrant){
@@ -1482,6 +1596,77 @@ function resetForm(){
   document.getElementById('cancel-edit').style.display = 'none';
   updateComputed();
 }
+
+/* ====================================================================
+   THEMES (light / dark / dark red) — chosen per device, remembered
+   ==================================================================== */
+const THEMES = ['light','dark','red'];
+const THEME_COLOR = { light:'#EEF2F7', dark:'#0A0C11', red:'#16040A' };
+function currentTheme(){ const t0 = document.documentElement.getAttribute('data-theme'); return THEMES.indexOf(t0) !== -1 ? t0 : 'light'; }
+function buildThemeSwitches(){
+  document.querySelectorAll('.theme-switch').forEach(box => {
+    box.innerHTML = THEMES.map(n => '<button type="button" class="th th-'+n+'" data-theme="'+n+'" title="'+t({light:'themeLight',dark:'themeDark',red:'themeRed'}[n])+'" aria-label="'+t({light:'themeLight',dark:'themeDark',red:'themeRed'}[n])+'"></button>').join('');
+  });
+  markTheme();
+}
+function markTheme(){ const cur = currentTheme(); document.querySelectorAll('.theme-switch .th').forEach(b => b.classList.toggle('active', b.getAttribute('data-theme') === cur)); }
+function cssVar(n){ return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+function setTheme(name){
+  if(THEMES.indexOf(name) === -1) name = 'light';
+  if(name === 'light') document.documentElement.removeAttribute('data-theme'); else document.documentElement.setAttribute('data-theme', name);
+  try{ localStorage.setItem('sbl_theme', name); }catch(e){}
+  const m = document.getElementById('meta-theme'); if(m) m.setAttribute('content', THEME_COLOR[name]);
+  markTheme();
+  if(session && viewingTab !== 'PRIVATE') renderCharts();
+  if(openedPage === 'chart') loadTv(tvSymbol || 'TVC:SILVER');
+}
+document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('.theme-switch .th'); if(b) setTheme(b.getAttribute('data-theme')); });
+
+/* ====================================================================
+   MANAGE USERS (admin) — rename and change role. The account's tabName never changes, so every record stays linked.
+   ==================================================================== */
+async function openUsers(){
+  if(!session || session.role !== 'admin') return;
+  document.getElementById('users-list').innerHTML = '<div class="empty">'+t('loading')+'</div>';
+  document.getElementById('users-modal').style.display = 'flex';
+  try{
+    const snap = await db.collection('employees').get();
+    employees = snap.docs.map(d => Object.assign({ uid: d.id }, d.data()));
+    renderUsers();
+  }catch(e){ document.getElementById('users-list').innerHTML = '<div class="empty">'+t('couldNotReach')+'</div>'; }
+}
+function closeUsers(){ document.getElementById('users-modal').style.display = 'none'; }
+function renderUsers(){
+  const order = { admin:0, employee:1, hr:2 };
+  const list = employees.slice().sort((a, b) => (order[a.role] - order[b.role]) || String(a.fullName).localeCompare(String(b.fullName)));
+  document.getElementById('users-list').innerHTML = list.map(u => {
+    const isAdmin = u.role === 'admin';
+    return '<div class="user-row" data-uid="'+esc(u.uid)+'"><div class="uname num" dir="ltr">'+esc(u.username || '')+'</div>'+
+      '<div><label>'+t('fullName')+'</label><input type="text" maxlength="60" id="ur-n-'+esc(u.uid)+'" value="'+esc(u.fullName)+'"></div>'+
+      '<div><label>'+t('roleLabel')+'</label><select id="ur-r-'+esc(u.uid)+'"'+(isAdmin?' disabled':'')+'>'+
+        (isAdmin ? '<option value="admin" selected>'+t('roleAdmin')+'</option>'
+                 : '<option value="employee"'+(u.role==='employee'?' selected':'')+'>'+t('roleEmployee')+'</option><option value="hr"'+(u.role==='hr'?' selected':'')+'>'+t('roleHr')+'</option>')+
+      '</select></div><button data-save-user="'+esc(u.uid)+'">'+t('save')+'</button><div class="ustatus" id="ur-s-'+esc(u.uid)+'"></div></div>';
+  }).join('');
+}
+async function saveUser(uid){
+  const nameEl = document.getElementById('ur-n-' + uid), roleEl = document.getElementById('ur-r-' + uid), st = document.getElementById('ur-s-' + uid);
+  const fullName = nameEl.value.trim();
+  const u = employees.find(x => x.uid === uid); if(!u) return;
+  st.className = 'ustatus';
+  if(!fullName){ st.textContent = t('nameRequired'); st.className = 'ustatus bad'; return; }
+  const role = u.role === 'admin' ? 'admin' : roleEl.value;
+  try{
+    await db.collection('employees').doc(uid).update({ fullName, role });
+    u.fullName = fullName; u.role = role;
+    if(session.uid === uid){ session.fullName = fullName; document.getElementById('who').textContent = fullName + ' · ' + session.role; }
+    st.textContent = t('savedOk'); st.className = 'ustatus ok';
+    await buildSidebar();
+    document.getElementById('viewing-title').textContent = viewTitle();
+    renderAll(); if(viewingTab === 'PRIVATE') renderPrivate();
+  }catch(e){ st.textContent = t('couldNotSave') + ' (' + (e.message || e) + ')'; st.className = 'ustatus bad'; }
+}
+document.getElementById('users-list').addEventListener('click', e => { const id = e.target.getAttribute('data-save-user'); if(id) saveUser(id); });
 
 /* ====================================================================
    PAGES: CALCULATOR + LIVE CHART  (full-screen pages opened from the icons in the menu)
@@ -1707,7 +1892,7 @@ function calcTxRows(){
 function renderCalcTx(){
   if(!session) return;
   document.getElementById('ctx-search').placeholder = t('searchPh');
-  const acct = subscribedTab === 'ALL' ? t('allEmployees') : (subscribedTab || session.fullName);
+  const acct = subscribedTab === 'ALL' ? t('allEmployees') : nameOf(subscribedTab || session.tabName);
   document.getElementById('ctx-title').textContent = t('ctxTitle') + ' ' + acct;
   const all = calcTxRows(), rows = all.slice(0, 200), showEmp = subscribedTab === 'ALL';
   // selected totals
@@ -1725,7 +1910,7 @@ function renderCalcTx(){
     '<th>'+t('colType')+'</th><th>'+t('colKg')+'</th><th>'+t('colCustomer')+'</th><th>'+t('colRate')+'</th><th>'+t('colPrice')+'</th><th>'+t('colMargin')+'</th><th>'+t('colTotal')+'</th><th></th></tr></thead><tbody>';
   rows.forEach(r => {
     const em = effMargin(r);
-    h += '<tr><td><input type="checkbox" style="width:auto;margin:0;" data-ctx-sel="'+r.id+'" '+(calcSel.has(r.id)?'checked':'')+'></td><td class="num">'+esc(r.date)+'</td>'+(showEmp?'<td>'+esc(r.tabName)+'</td>':'')+
+    h += '<tr><td><input type="checkbox" style="width:auto;margin:0;" data-ctx-sel="'+r.id+'" '+(calcSel.has(r.id)?'checked':'')+'></td><td class="num">'+esc(r.date)+'</td>'+(showEmp?'<td>'+esc(nameOf(r.tabName))+'</td>':'')+
       '<td>'+(r.type===WAY1?t('way1'):t('way2'))+'</td><td class="num">'+Number(r.kg).toFixed(2)+'</td><td>'+esc(r.customer)+'</td><td class="num">'+cleanRate(r.rate)+'</td>'+
       '<td class="num">'+fmtMoney(r.negotiatedPrice)+'</td><td class="num"><span class="margin-pill '+(em>=0?'margin-pos':'margin-neg')+'">'+fmtSigned(em)+'</span></td>'+
       '<td class="num">'+fmtMoney(r.total)+'</td><td><button class="secondary" style="padding:5px 12px;font-size:12px;" data-ctx-use="'+r.id+'">'+t('useBtn')+'</button></td></tr>';
@@ -1761,7 +1946,7 @@ function loadTv(sym){
   wrap.appendChild(inner);
   const sc = document.createElement('script');
   sc.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js'; sc.async = true;
-  sc.text = JSON.stringify({ autosize: true, symbol: sym, interval: '60', timezone: 'Asia/Baghdad', theme: 'light', style: '1',
+  sc.text = JSON.stringify({ autosize: true, symbol: sym, interval: '60', timezone: 'Asia/Baghdad', theme: currentTheme() === 'light' ? 'light' : 'dark', style: '1',
     locale: LANG === 'ckb' ? 'ar_AE' : 'en', allow_symbol_change: true, hide_side_toolbar: window.innerWidth < 880, withdateranges: true,
     save_image: false, calendar: false, support_host: 'https://www.tradingview.com' });
   wrap.appendChild(sc); box.appendChild(wrap);
@@ -1852,7 +2037,7 @@ function chartBaseOptions(){
     },
     scales: {
       x: { grid: { display: false }, ticks: { maxRotation: 60, autoSkip: true, font: { size: fs } } },
-      y: { beginAtZero: true, ticks: { font: { size: fs }, callback: v => '\u200E' + v }, grid: { color: 'rgba(0,0,0,.06)' } }
+      y: { beginAtZero: true, ticks: { font: { size: fs }, callback: v => '\u200E' + v }, grid: { color: cssVar('--grid') || 'rgba(0,0,0,.06)' } }
     }
   };
 }
@@ -1875,8 +2060,8 @@ function renderCharts(){
     return;
   }
   Chart.defaults.font.family = "Inter, 'Noto Sans Arabic', -apple-system, sans-serif";
-  Chart.defaults.color = '#6E6E73';
-  const GOLD = '#B8860B', BLUE = '#5B7DB1', GREEN = '#34C759', RED = '#FF3B30', INK = '#1C1C1E';
+  Chart.defaults.color = cssVar('--muted') || '#6E6E73';
+  const GOLD = '#B8860B', BLUE = '#5B7DB1', GREEN = '#34C759', RED = '#FF3B30', INK = cssVar('--ink') || '#1C1C1E';
 
   // ---- 1) silver KG ----
   const o1 = chartBaseOptions();
@@ -1940,7 +2125,7 @@ function exportRows(){
     const isGrant = r.type === GRANT_SULY || r.type === GRANT_BUZAN;
     const typeLabel = r.type === WAY1 ? t('way1') : r.type === WAY2 ? t('way2') : r.type === GRANT_SULY ? '+'+t('grantSuly') : '+'+t('grantBuzan');
     const row = {};
-    if(showEmp) row['Employee'] = r.tabName || '';
+    if(showEmp) row['Employee'] = nameOf(r.tabName) || '';
     row['Date'] = r.date; row['Type'] = typeLabel; row['KG'] = round2(r.kg);
     row['Customer'] = isGrant ? '' : (r.customer || '');
     row['Rate'] = isGrant ? '' : +Number(r.rate).toFixed(3);            // kept exactly as typed
@@ -1955,7 +2140,7 @@ function exportRows(){
     return row;
   });
 }
-function exportName(){ return (viewingTab === 'ALL' ? 'All_employees' : viewingTab) + '_' + ymd(new Date()); }
+function exportName(){ return (viewingTab === 'ALL' ? 'All_employees' : nameOf(viewingTab)) + '_' + ymd(new Date()); }
 function exportTitle(){ return (viewingTab === 'ALL' ? t('allEmployees') : viewingTab) + ' — ' + t('transactions'); }
 
 function sheetFromRows(rows){
@@ -1981,7 +2166,7 @@ function exportXlsx(){
   if(!rows.length) return;
   const wb = XLSX.utils.book_new();
   wb.Workbook = { Views: [{ RTL: LANG === 'ckb' }] };                          // right-to-left sheet for Kurdish
-  XLSX.utils.book_append_sheet(wb, sheetFromRows(rows), safeSheetName(viewingTab === 'ALL' ? t('allEmployees') : viewingTab));
+  XLSX.utils.book_append_sheet(wb, sheetFromRows(rows), safeSheetName(viewingTab === 'ALL' ? t('allEmployees') : nameOf(viewingTab)));
   XLSX.writeFile(wb, exportName() + '.xlsx');
 }
 
@@ -2098,7 +2283,7 @@ async function generatePdf(btnSel, sections, fileName){
 function exportPdf(){
   const rows = exportRows();
   if(!rows.length) return;
-  const nameHtml = viewingTab === 'ALL' ? esc(t('allEmployees')) : '<bdi>' + esc(viewingTab) + '</bdi>';
+  const nameHtml = viewingTab === 'ALL' ? esc(t('allEmployees')) : '<bdi>' + esc(nameOf(viewingTab)) + '</bdi>';
   return generatePdf('#export-row button', [{ titleHtml: nameHtml + ' — ' + esc(t('transactions')), rows }], exportName());
 }
 
@@ -2116,6 +2301,8 @@ function showPrivate(on){
   if(on){
     const admin = session && session.role === 'admin';
     document.querySelectorAll('#private-view .pv-admin').forEach(el => { el.style.display = admin ? 'block' : 'none'; });
+    const canBuzan = session && (session.role === 'admin' || session.role === 'hr');
+    document.querySelectorAll('#private-view .pv-buzan-edit').forEach(el => { el.style.display = canBuzan ? 'block' : 'none'; });
   }
 }
 
@@ -2126,6 +2313,7 @@ function loadPrivate(){
   document.getElementById('pvn-sum').innerHTML = ''; document.getElementById('pvs-sum').innerHTML = '';
   if(!document.getElementById('pvn-date').value) resetPvNote();
   if(!document.getElementById('pvs-date').value) resetPvSwap();
+  if(!document.getElementById('pvb-date').value) resetPvBuzan();
   privateUnsub = db.collection('private').onSnapshot(snap => {
     privateRecords = snap.docs.map(d => Object.assign({ id: d.id }, d.data()));
     applyPrivateFilter();
@@ -2156,7 +2344,8 @@ function pvSort(a, b){ return a.date === b.date ? tsMillis(a) - tsMillis(b) : (a
 function sumCell(label, valueHtml){ return '<div>'+label+'<span class="num">'+valueHtml+'</span></div>'; }
 
 function pvActions(r){
-  if(!session || session.role !== 'admin') return '';
+  const canEditThis = session && (session.role === 'admin' || (session.role === 'hr' && r.kind === 'buzan'));
+  if(!canEditThis) return '';
   return '<td class="row-actions"><button class="secondary" data-pv-edit="'+r.id+'">'+t('edit')+'</button><button class="danger" data-pv-del="'+r.id+'">'+t('delete')+'</button></td>';
 }
 
@@ -2165,7 +2354,8 @@ function renderPrivate(){
   const admin = session.role === 'admin';
   const notes = privateCurrent.filter(r => r.kind === 'note').sort(pvSort);
   const swaps = privateCurrent.filter(r => r.kind === 'swap').sort(pvSort);
-  document.getElementById('private-export-row').style.display = (notes.length || swaps.length) ? 'flex' : 'none';
+  const buz = privateCurrent.filter(r => r.kind === 'buzan').sort(pvSort);
+  document.getElementById('private-export-row').style.display = (notes.length || swaps.length || buz.length) ? 'flex' : 'none';
 
   // ---- notes ----
   const m = { silver:{ in:0, out:0 }, gold:{ in:0, out:0 } };
@@ -2212,7 +2402,70 @@ function renderPrivate(){
     });
     document.getElementById('pvs-table').innerHTML = h + '</tbody></table>';
   }
-  updatePvSwap();
+  renderPvBuzan(buz);
+  updatePvSwap(); updatePvBuzan();
+}
+
+/* ---- Buzan-only buy / sell (admin + HR) ----
+   Buy from Buzan: we pay our price, the market value is the Buzan rate  -> margin = market - price
+   Sell to Buzan:  we receive our price against the Buzan rate          -> margin = price - market  */
+function buzanCalc(side, rate, price){
+  const market = (rate / TROY_OUNCE_GRAMS) * 1000;
+  return { market, margin: side === 'sell' ? price - market : market - price };
+}
+function renderPvBuzan(buz){
+  const can = session && (session.role === 'admin' || session.role === 'hr');
+  let bKg = 0, bTot = 0, sKg = 0, sTot = 0, pl = 0;
+  buz.forEach(r => {
+    const kg = Number(r.kg)||0, total = (Number(r.price)||0) * kg, c = buzanCalc(r.side, Number(r.rate)||0, Number(r.price)||0);
+    if(r.side === 'sell'){ sKg += kg; sTot += total; } else { bKg += kg; bTot += total; }
+    pl += c.margin * kg;
+  });
+  const net = sTot - bTot;
+  document.getElementById('pvb-sum').innerHTML =
+    sumCell(t('seriesBought'), fmtKg(bKg)) + sumCell(t('totalBought'), fmtMoney(bTot)) + sumCell(t('avgBuyPrice'), fmtMoney(bKg ? bTot / bKg : 0)) +
+    sumCell(t('seriesSold'), fmtKg(sKg)) + sumCell(t('totalSold'), fmtMoney(sTot)) + sumCell(t('avgSellPrice'), fmtMoney(sKg ? sTot / sKg : 0)) +
+    sumCell(t('pvLeftBuzan'), kgPill(bKg - sKg)) + sumCell(t('income'), '<span class="margin-pill '+(net>=0?'margin-pos':'margin-neg')+'">'+fmtSigned(net)+'</span>') +
+    sumCell(t('plKg'), '<span class="margin-pill '+(pl>=0?'margin-pos':'margin-neg')+'">'+fmtSigned(pl)+'</span>');
+  const wrap = document.getElementById('pvb-table');
+  if(!buz.length){ wrap.innerHTML = '<div class="empty">'+t('pvEmpty')+'</div>'; return; }
+  let h = '<table><thead><tr><th>'+t('date')+'</th><th>'+t('colType')+'</th><th>'+t('colKg')+'</th><th>'+t('party')+'</th><th>'+t('colRate')+'</th><th>'+t('colPrice')+'</th><th>'+t('colMarket')+'</th><th>'+t('colMargin')+'</th><th>'+t('colPlKg')+'</th><th>'+t('colTotal')+'</th><th>'+t('notes')+'</th><th>'+t('colEnteredBy')+'</th>'+(can?'<th></th>':'')+'</tr></thead><tbody>';
+  buz.forEach(r => {
+    const kg = Number(r.kg)||0, price = Number(r.price)||0, c = buzanCalc(r.side, Number(r.rate)||0, price), sell = r.side === 'sell';
+    h += '<tr><td class="num">'+esc(r.date)+'</td><td><span class="margin-pill '+(sell?'margin-pos':'margin-neg')+'">'+t(sell?'sideSell':'sideBuy')+'</span></td><td class="num">'+kg.toFixed(2)+'</td><td>'+esc(r.party)+'</td>'+
+      '<td class="num">'+cleanRate(r.rate)+'</td><td class="num">'+fmtMoney(price)+'</td><td class="num">'+fmtMoney(c.market)+'</td>'+
+      '<td class="num"><span class="margin-pill '+(c.margin>=0?'margin-pos':'margin-neg')+'">'+fmtSigned(c.margin)+'</span></td>'+
+      '<td class="num"><span class="margin-pill '+(c.margin>=0?'margin-pos':'margin-neg')+'">'+fmtSigned(c.margin*kg)+'</span></td><td class="num">'+fmtMoney(price*kg)+'</td>'+
+      '<td style="white-space:normal;min-width:110px;">'+esc(r.notes)+'</td><td>'+esc(r.enteredBy)+'</td>'+pvActions(r)+'</tr>';
+  });
+  wrap.innerHTML = h + '</tbody></table>';
+}
+function updatePvBuzan(){
+  const side = document.getElementById('pvb-side').value;
+  const kg = parseFloat(document.getElementById('pvb-kg').value) || 0, rate = parseFloat(document.getElementById('pvb-rate').value) || 0, price = parseFloat(document.getElementById('pvb-price').value) || 0;
+  const c = buzanCalc(side, rate, price);
+  document.getElementById('pvb-c-ounce').textContent = (kg / OUNCE_DIVISOR).toFixed(2);
+  document.getElementById('pvb-c-market').textContent = fmtMoney(c.market);
+  document.getElementById('pvb-c-pl').textContent = fmtSigned(c.margin * kg);
+  document.getElementById('pvb-c-total').textContent = fmtMoney(price * kg);
+  const pill = document.querySelector('#pvb-c-margin .margin-pill'); pill.textContent = fmtSigned(c.margin); pill.className = 'margin-pill ' + (c.margin >= 0 ? 'margin-pos' : 'margin-neg');
+}
+function resetPvBuzan(){
+  ['pvb-id','pvb-kg','pvb-party','pvb-rate','pvb-price','pvb-notes'].forEach(id => { document.getElementById(id).value = ''; });
+  document.getElementById('pvb-date').value = ymd(new Date()); document.getElementById('pvb-side').value = 'buy';
+  document.getElementById('pvb-cancel').style.display = 'none'; updatePvBuzan();
+}
+async function submitPvBuzan(){
+  const id = document.getElementById('pvb-id').value, date = document.getElementById('pvb-date').value, side = document.getElementById('pvb-side').value;
+  const kg = parseFloat(document.getElementById('pvb-kg').value), rate = parseFloat(document.getElementById('pvb-rate').value), price = parseFloat(document.getElementById('pvb-price').value);
+  if(!date || !(kg > 0) || !(rate > 0) || !(price > 0)){ alert(t('pvFillBuzan')); return; }
+  const c = buzanCalc(side, rate, price);
+  const data = { kind:'buzan', date, side, kg, rate, price, party: document.getElementById('pvb-party').value, notes: document.getElementById('pvb-notes').value,
+    ounce: kg / OUNCE_DIVISOR, marketPrice: c.market, margin: c.margin, total: price * kg, enteredBy: session.fullName, timestamp: firebase.firestore.FieldValue.serverTimestamp() };
+  try{
+    if(id) await db.collection('private').doc(id).set(data, { merge: true }); else await db.collection('private').add(data);
+    resetPvBuzan();
+  }catch(e){ alert(t('couldNotSave') + ' (' + e.message + ')'); }
 }
 
 /* ---- note form ---- */
@@ -2273,6 +2526,14 @@ async function submitPvSwap(){
 
 function editPv(id){
   const r = privateRecords.find(x => x.id === id); if(!r) return;
+  if(r.kind === 'buzan'){
+    document.getElementById('pvb-id').value = r.id; document.getElementById('pvb-date').value = r.date; document.getElementById('pvb-side').value = r.side;
+    document.getElementById('pvb-kg').value = r.kg; document.getElementById('pvb-rate').value = r.rate; document.getElementById('pvb-price').value = r.price;
+    document.getElementById('pvb-party').value = r.party || ''; document.getElementById('pvb-notes').value = r.notes || '';
+    document.getElementById('pvb-cancel').style.display = 'inline-block'; updatePvBuzan();
+    document.getElementById('pvb-form').scrollIntoView({ behavior:'smooth', block:'center' });
+    return;
+  }
   if(r.kind === 'note'){
     document.getElementById('pvn-id').value = r.id; document.getElementById('pvn-date').value = r.date;
     document.getElementById('pvn-metal').value = r.metal; document.getElementById('pvn-dir').value = r.direction;
@@ -2310,23 +2571,33 @@ function pvSwapRows(){
       'Party': r.party || '', 'Notes': r.notes || '', 'Entered by': r.enteredBy || '' };
   });
 }
+function pvBuzanRows(){
+  return privateCurrent.filter(r => r.kind === 'buzan').sort(pvSort).map(r => {
+    const kg = Number(r.kg)||0, price = Number(r.price)||0, c = buzanCalc(r.side, Number(r.rate)||0, price);
+    return { 'Date': r.date, 'Type': t(r.side === 'sell' ? 'sideSell' : 'sideBuy'), 'KG': round2(kg), 'Party': r.party || '', 'Rate': +Number(r.rate).toFixed(3),
+      'Price/KG': round2(price), 'Market $/KG': round2(c.market), 'Margin': round2(c.margin), 'P/L x KG': round2(c.margin * kg), 'Total': round2(price * kg),
+      'Entered by': r.enteredBy || '', 'Notes': r.notes || '' };
+  });
+}
 function privateName(){ return 'Private_desk_' + ymd(new Date()); }
 function exportPrivateXlsx(){
-  const n = pvNoteRows(), sw = pvSwapRows();
-  if(!n.length && !sw.length) return;
+  const n = pvNoteRows(), sw = pvSwapRows(), bz = pvBuzanRows();
+  if(!n.length && !sw.length && !bz.length) return;
   const wb = XLSX.utils.book_new();
   wb.Workbook = { Views: [{ RTL: LANG === 'ckb' }] };
   if(n.length) XLSX.utils.book_append_sheet(wb, sheetFromRows(n), safeSheetName(t('pvNotesTitle')));
   if(sw.length) XLSX.utils.book_append_sheet(wb, sheetFromRows(sw), safeSheetName(t('pvSwapTitle')));
+  if(bz.length) XLSX.utils.book_append_sheet(wb, sheetFromRows(bz), safeSheetName(t('pvBuzanTitle')));
   XLSX.writeFile(wb, privateName() + '.xlsx');
 }
 function exportPrivatePdf(){
-  const n = pvNoteRows(), sw = pvSwapRows();
-  if(!n.length && !sw.length) return;
+  const n = pvNoteRows(), sw = pvSwapRows(), bz = pvBuzanRows();
+  if(!n.length && !sw.length && !bz.length) return;
   const head = esc(t('privateDesk')) + ' — ';
   return generatePdf('#private-export-row button', [
     { titleHtml: head + esc(t('pvNotesTitle')), rows: n, widths: { 'Notes': 30, 'Date': 9 } },
-    { titleHtml: head + esc(t('pvSwapTitle')), rows: sw, widths: { 'Notes': 14, 'Type': 14, 'Date': 8 } }
+    { titleHtml: head + esc(t('pvSwapTitle')), rows: sw, widths: { 'Notes': 14, 'Type': 14, 'Date': 8 } },
+    { titleHtml: head + esc(t('pvBuzanTitle')), rows: bz, widths: { 'Notes': 12, 'Type': 12, 'Date': 8 } }
   ], privateName());
 }
 
@@ -2345,6 +2616,7 @@ document.getElementById('private-view').addEventListener('click', (e)=>{
 let lastW = window.innerWidth;     // only redraw when the width changes (phones fire resize when the address bar hides)
 window.addEventListener('resize', () => { clearTimeout(window.__rz); window.__rz = setTimeout(() => { if(window.innerWidth !== lastW){ lastW = window.innerWidth; if(session && viewingTab !== 'PRIVATE') renderCharts(); } }, 250); });
 applyStaticTranslations();
+buildThemeSwitches();
 checkFirstRunSetup();
 auth.onAuthStateChanged(user => {
   if(user && !session){
