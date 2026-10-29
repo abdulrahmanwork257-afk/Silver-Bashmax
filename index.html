@@ -405,7 +405,7 @@
     </div>
     <div id="tab-list"></div>
     <select id="tab-select" onchange="switchTab(this.value)"></select>
-    <div id="add-employee-link" style="display:none;"><button class="ghost" style="width:100%;margin-bottom:6px;" onclick="openAddEmployee()" data-i18n="addEmployee">+ Add employee</button><button class="ghost" style="width:100%;margin-bottom:10px;" onclick="openUsers()" data-i18n="manageUsers">Manage users</button></div>
+    <div id="add-employee-link" style="display:none;"><button class="ghost" style="width:100%;margin-bottom:6px;" onclick="openAddEmployee()" data-i18n="addEmployee">+ Add employee</button><button class="ghost" style="width:100%;margin-bottom:10px;" onclick="openUsers()" data-i18n="manageUsers">Manage users</button><button class="ghost" style="width:100%;margin-bottom:6px;" id="backup-btn" onclick="runBackup()" data-i18n="backupBtn">Backup everything</button><button class="ghost" style="width:100%;margin-bottom:10px;color:var(--red,#c0392b);" onclick="openReset()" data-i18n="resetBtn">Reset accounts</button></div>
     <div class="signout" onclick="signOut()" data-i18n="signOut">Sign out</div>
   </div>
 
@@ -572,10 +572,10 @@
             <div><label data-i18n="date">Date</label><input type="date" id="pvb-date"></div>
             <div><label data-i18n="type">Type</label>
               <select id="pvb-side" onchange="updatePvBuzan()"><option value="buy" data-i18n="sideBuy">Buy from Buzan</option><option value="sell" data-i18n="sideSell">Sell to Buzan</option></select></div>
-            <div><label data-i18n="kg">KG</label><input type="number" step="any" inputmode="decimal" id="pvb-kg" oninput="updatePvBuzan()"></div>
             <div><label data-i18n="party">Other side / name</label><input type="text" id="pvb-party"></div>
+            <div><label data-i18n="kg">KG</label><input type="number" step="any" inputmode="decimal" id="pvb-kg" oninput="updatePvBuzan()"></div>
             <div><label data-i18n="rate">Rate (per troy oz)</label><input type="number" step="any" inputmode="decimal" id="pvb-rate" oninput="updatePvBuzan()"></div>
-            <div><label data-i18n="price">Negotiated price (per KG)</label><input type="number" step="any" inputmode="decimal" id="pvb-price" oninput="updatePvBuzan()"></div>
+            <div><label data-i18n="priceOpt">Negotiated price (per KG) — optional</label><input type="number" step="any" inputmode="decimal" id="pvb-price" oninput="updatePvBuzan()"></div>
             <div class="full"><label data-i18n="notes">Notes</label><input type="text" id="pvb-notes"></div>
           </div>
           <div class="computed-row">
@@ -749,6 +749,27 @@
   </div>
 </div>
 
+<!-- ============ RESET MODAL (admin only) ============ -->
+<div id="reset-modal" class="dp-backdrop" onclick="if(event.target===this)closeReset()">
+  <div class="glass" style="max-width:560px;width:100%;padding:22px;max-height:88vh;overflow:auto;">
+    <h3 style="margin-bottom:6px;" data-i18n="resetTitle">Reset account data</h3>
+    <div class="subhead" style="margin:0 0 10px;" data-i18n="resetHint">Permanently deletes all transactions and calculations of the chosen employee. Admin only.</div>
+    <div id="reset-list"></div>
+    <div id="reset-confirm" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid rgba(128,128,128,.25);">
+      <div id="reset-confirm-msg" style="margin-bottom:8px;font-weight:600;"></div>
+      <label style="display:flex;gap:8px;align-items:center;margin:6px 0;"><input type="checkbox" id="reset-backup-first" checked style="width:auto;margin:0;"><span data-i18n="resetBackupFirst">Download a full backup before deleting</span></label>
+      <label data-i18n="resetTypeName">Type the name to confirm</label>
+      <input id="reset-typed" type="text" autocomplete="off">
+      <div style="display:flex;gap:8px;margin-top:10px;justify-content:flex-end;">
+        <button class="secondary" onclick="cancelResetConfirm()" data-i18n="cancel">Cancel</button>
+        <button id="reset-go" onclick="doReset()" style="background:#c0392b;" data-i18n="resetNow">Delete data</button>
+      </div>
+    </div>
+    <div id="reset-status" class="subhead" style="margin-top:8px;"></div>
+    <div style="text-align:end;margin-top:14px;"><button class="secondary" onclick="closeReset()" data-i18n="close">Close</button></div>
+  </div>
+</div>
+
 <!-- ============ ADD EMPLOYEE MODAL ============ -->
 <div id="add-employee-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:50;align-items:center;justify-content:center;padding:20px;">
   <div class="glass" style="max-width:380px;width:100%;padding:28px;">
@@ -858,12 +879,20 @@ const I18N = {
     plKg: 'P/L × KG', colPlKg: 'P/L × KG', netProfit: 'Net profit (per KG left in shop)', netProfitClosed: 'Profit on completed buy & sell (without remaining KG)', netProfitOpen: 'Profit on remaining KG only', toSell: 'left to sell', toBuy: 'left to buy back',
     roleLabel: 'Role', roleEmployee: 'Employee (own tab, view only)', roleHr: 'HR (view & download everything, no editing)', hrSub: 'View and download only — HR cannot add or change data.',
     exportFailed: 'Could not create the PDF.',
+    backupBtn: 'Backup everything', backupWorking: 'Preparing backup…', backupDone: 'Backup downloaded (Excel + JSON).', backupFailed: 'Backup failed — nothing was deleted.',
+    resetBtn: 'Reset accounts', resetTitle: 'Reset account data', resetHint: 'Permanently deletes all transactions and calculations of the chosen employee. Admin only. Make a backup first.',
+    resetRow: 'Reset', resetRecords: 'records', resetConfirmMsg: 'Delete ALL data of: ', resetBackupFirst: 'Download a full backup before deleting',
+    resetTypeName: 'Type the name to confirm', resetNow: 'Delete data', resetNameMismatch: 'The name does not match.', resetDone: 'Account reset — records deleted: ',
+    resetFailed: 'Reset failed. Some data may remain.', sheetSummary: 'Summary', sheetAll: 'All transactions', sheetUsers: 'Users',
+    sumEmployee: 'Employee', sumRecords: 'Records', sumSulyBought: 'Suly bought KG', sumSulySold: 'Suly sold KG', sumBuzanBought: 'Buzan bought KG', sumBuzanSold: 'Buzan sold KG',
+    sumTotalBuy: 'Total buy', sumTotalSell: 'Total sell', sumWay1: 'Net Sell Suly / Buy Buzan', sumWay2: 'Net Buy Suly / Sell Buzan', sumBalance: 'Suly balance KG', sumNet: 'Net profit per KG', sumClosed: 'Closed profit', sumOpen: 'Open profit',
+    uName: 'Name', uUser: 'Username', uRole: 'Role',
     themeLight: 'Light', themeDark: 'Dark', themeRed: 'Dark red',
     manageUsers: 'Manage users', usersHint: "Change a person's display name or role. Their records stay linked to the account, so renaming is safe. A role change applies the next time that person signs in.",
     roleAdmin: 'Admin', close: 'Close', savedOk: 'Saved', nameRequired: 'Enter a name.',
     pvBuzanTitle: 'Buzan only: buy / sell', pvBuzanHint: 'Buy from or sell directly to Buzan only (not through Suly). Kept apart from the Suly accounts. Admin and HR can enter and edit.',
     sideBuy: 'Buy from Buzan', sideSell: 'Sell to Buzan', avgBuyPrice: 'Avg buy price', avgSellPrice: 'Avg sell price', pvLeftBuzan: 'Balance (KG)',
-    pvFillBuzan: 'Fill in date, KG, rate and price.',
+    pvFillBuzan: 'Fill in date, KG and rate.', priceOpt: 'Negotiated price (per KG) — optional',
     calcTitle: 'Calculator', liveChartTitle: 'Live silver chart', back: 'Back', calcNote: 'Only for you — nothing here is counted in the real accounts.',
     tabBasic: 'Calculator', tabTrade: 'Trade calc', tabConvert: 'Converter', targetMargin: 'Target margin per KG (optional)',
     noteOpt: 'Note (optional)', priceToQuote: 'Price to quote', saveCalc: 'Save calculation', gram: 'Gram', troyOz: 'Troy ounce',
@@ -927,12 +956,20 @@ const I18N = {
     plKg: 'قازانج/زیان × کیلۆ', colPlKg: 'قازانج/زیان × کیلۆ', netProfit: 'قازانجی ڕاستەقینە (بۆ هەر کیلۆی ماوە لە دووکان)', netProfitClosed: 'قازانجی کڕین و فرۆشتنی تەواوبوو (بەبێ کیلۆی ماوە)', netProfitOpen: 'قازانجی تەنها ئەو کیلۆیانەی ماونەتەوە', toSell: 'ماوە بۆ فرۆشتن', toBuy: 'ماوە بۆ کڕین',
     roleLabel: 'ڕۆڵ', roleEmployee: 'کارمەند (تەنها لاپەڕەی خۆی، تەنها بینین)', roleHr: 'سەرچاوە مرۆییەکان (بینین و داگرتنی هەموو شتێک، بێ دەستکاری)', hrSub: 'تەنها بینین و داگرتن — سەرچاوە مرۆییەکان ناتوانن زانیاری زیاد بکەن یان بیگۆڕن.',
     exportFailed: 'نەتوانرا PDF دروست بکرێت.',
+    backupBtn: 'یەدەگی هەموو شتێک', backupWorking: 'یەدەگ ئامادە دەکرێت…', backupDone: 'یەدەگ داگیرا (ئێکسڵ + JSON).', backupFailed: 'یەدەگ سەرنەکەوت — هیچ شتێک نەسڕایەوە.',
+    resetBtn: 'سفرکردنەوەی هەژمارەکان', resetTitle: 'سفرکردنەوەی داتای هەژمار', resetHint: 'هەموو مامەڵە و هەژمارکردنەکانی فەرمانبەری هەڵبژێردراو بۆ هەمیشە دەسڕێتەوە. تەنیا بەڕێوەبەر. سەرەتا یەدەگ بگرە.',
+    resetRow: 'سفرکردنەوە', resetRecords: 'تۆمار', resetConfirmMsg: 'هەموو داتای ئەمە بسڕەوە: ', resetBackupFirst: 'پێش سڕینەوە یەدەگی تەواو دابگرە',
+    resetTypeName: 'ناوەکە بنووسە بۆ دڵنیابوون', resetNow: 'سڕینەوەی داتا', resetNameMismatch: 'ناوەکە یەک ناگرێتەوە.', resetDone: 'هەژمار سفر کرایەوە — تۆماری سڕاوە: ',
+    resetFailed: 'سفرکردنەوە سەرنەکەوت. لەوانەیە هەندێک داتا مابێتەوە.', sheetSummary: 'پوختە', sheetAll: 'هەموو مامەڵەکان', sheetUsers: 'بەکارهێنەران',
+    sumEmployee: 'فەرمانبەر', sumRecords: 'تۆمار', sumSulyBought: 'کیلۆی کڕاو (سلێمانی)', sumSulySold: 'کیلۆی فرۆشراو (سلێمانی)', sumBuzanBought: 'کیلۆی کڕاو (بوزان)', sumBuzanSold: 'کیلۆی فرۆشراو (بوزان)',
+    sumTotalBuy: 'کۆی کڕین', sumTotalSell: 'کۆی فرۆشتن', sumWay1: 'خێر: فرۆشتن سلێمانی / کڕین بوزان', sumWay2: 'خێر: کڕین سلێمانی / فرۆشتن بوزان', sumBalance: 'کیلۆی ماوە (سلێمانی)', sumNet: 'قازانجی سافی بۆ هەر کیلۆیەک', sumClosed: 'قازانجی داخراو', sumOpen: 'قازانجی کراوە',
+    uName: 'ناو', uUser: 'ناوی بەکارهێنەر', uRole: 'ڕۆڵ',
     themeLight: 'ڕووناک', themeDark: 'تاریک', themeRed: 'سووری تۆخ',
     manageUsers: 'بەڕێوەبردنی بەکارهێنەران', usersHint: 'ناوی پیشاندراو یان ڕۆڵی کەسێک بگۆڕە. تۆمارەکانیان بە هەژمارەکەیانەوە بەستراون، بۆیە گۆڕینی ناو بێ مەترسییە. گۆڕینی ڕۆڵ لە جاری داهاتووی چوونەژوورەوەی ئەو کەسەدا کار دەکات.',
     roleAdmin: 'بەڕێوەبەر', close: 'داخستن', savedOk: 'پاشەکەوت کرا', nameRequired: 'ناوێک بنووسە.',
     pvBuzanTitle: 'بوزان تەنها: کڕین / فرۆشتن', pvBuzanHint: 'کڕین لە بوزان یان فرۆشتن بە بوزان بەتەنها (نەک لە ڕێگەی سلێمانییەوە). لە هەژمارەکانی سلێمانی جیایە. بەڕێوەبەر و سەرچاوە مرۆییەکان دەتوانن تۆمار بکەن و دەستکاری بکەن.',
     sideBuy: 'کڕین لە بوزان', sideSell: 'فرۆشتن بە بوزان', avgBuyPrice: 'تێکڕای نرخی کڕین', avgSellPrice: 'تێکڕای نرخی فرۆشتن', pvLeftBuzan: 'ماوە (کیلۆ)',
-    pvFillBuzan: 'بەروار، کیلۆ، نرخ و بەها پڕبکەرەوە.',
+    pvFillBuzan: 'بەروار، کیلۆ و نرخ پڕبکەرەوە.', priceOpt: 'نرخی ڕێککەوتوو (بۆ هەر کیلۆیەک) — ئارەزوومەندانە',
     calcTitle: 'ژمێرەر', liveChartTitle: 'هێڵکاری زیندووی زیو', back: 'گەڕانەوە', calcNote: 'تەنها بۆ خۆتە — هیچ شتێک لێرە ناخرێتە ناو هەژمارە ڕاستەقینەکان.',
     tabBasic: 'ژمێرەر', tabTrade: 'ژمێرەری مامەڵە', tabConvert: 'گۆڕەر', targetMargin: 'قازانجی مەبەست بۆ هەر کیلۆیەک (ئارەزوومەندانە)',
     noteOpt: 'تێبینی (ئارەزوومەندانە)', priceToQuote: 'نرخی پێشنیارکراو', saveCalc: 'پاشەکەوتکردنی ژماردن', gram: 'گرام', troyOz: 'ئۆنسی تروی',
@@ -2161,6 +2198,126 @@ function sheetFromRows(rows){
 }
 function safeSheetName(n){ return String(n).replace(/[\\\/\?\*\[\]:]/g,' ').substring(0,31); }
 
+
+/* ====== BACKUP & RESET (admin only) ====== */
+function dlBlob(blob, name){
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href), 4000);
+}
+function recRow(r){
+  const isGrant = r.type === GRANT_SULY || r.type === GRANT_BUZAN;
+  const typeLabel = r.type === WAY1 ? t('way1') : r.type === WAY2 ? t('way2') : r.type === GRANT_SULY ? '+'+t('grantSuly') : '+'+t('grantBuzan');
+  return {
+    'Employee': nameOf(r.tabName) || r.tabName || '', 'Date': r.date, 'Type': typeLabel, 'KG': round2(r.kg),
+    'Customer': isGrant ? '' : (r.customer || ''), 'Rate': isGrant ? '' : +Number(r.rate).toFixed(3),
+    'Price/KG': isGrant ? '' : round2(r.negotiatedPrice), 'Ounce': isGrant ? '' : round2(r.ounce),
+    'Market $/KG': isGrant ? '' : round2(r.marketPrice), 'Margin': isGrant ? '' : round2(effMargin(r)),
+    'P/L x KG': isGrant ? '' : round2(effMargin(r) * Number(r.kg)), 'Total': isGrant ? '' : round2(r.total),
+    'Entered by': r.enteredBy || '', 'Notes': r.notes || ''
+  };
+}
+async function fetchAllData(){
+  const [e, r, p] = await Promise.all([db.collection('employees').get(), db.collection('records').get(), db.collection('private').get()]);
+  const get = snap => snap.docs.map(d => Object.assign({ id: d.id }, d.data()));
+  return { employees: get(e), records: get(r), priv: get(p) };
+}
+async function runBackup(silent){
+  if(!session || session.role !== 'admin') return false;
+  const btn = document.getElementById('backup-btn');
+  if(btn){ btn.disabled = true; btn.textContent = t('backupWorking'); }
+  try{
+    const D = await fetchAllData();
+    employees = D.employees.map(x => Object.assign({ uid: x.id }, x));
+    const stamp = ymd(new Date()) + '_' + new Date().toTimeString().slice(0,5).replace(':','-');
+    const wb = XLSX.utils.book_new();
+    wb.Workbook = { Views: [{ RTL: LANG === 'ckb' }] };
+    const tabs = Array.from(new Set(D.records.map(r => r.tabName).concat(D.employees.map(x => x.tabName)).filter(Boolean)));
+    const saveCur = currentRecords, summary = [];
+    tabs.forEach(tab => {
+      currentRecords = D.records.filter(r => r.tabName === tab);
+      const T = computeTotals();
+      summary.push({ [t('sumEmployee')]: nameOf(tab) || tab, [t('sumRecords')]: T.recordCount,
+        [t('sumSulyBought')]: round2(T.suly.boughtKg), [t('sumSulySold')]: round2(T.suly.soldKg),
+        [t('sumBuzanBought')]: round2(T.buzan.boughtKg), [t('sumBuzanSold')]: round2(T.buzan.soldKg),
+        [t('sumTotalBuy')]: round2(T.totalBuy), [t('sumTotalSell')]: round2(T.totalSell),
+        [t('sumWay1')]: round2(T.way1Net), [t('sumWay2')]: round2(T.way2Net), [t('sumBalance')]: round2(T.sulyBalanceKg),
+        [t('sumNet')]: round2(T.netProfit), [t('sumClosed')]: round2(T.split.closed), [t('sumOpen')]: round2(T.split.open) });
+    });
+    currentRecords = saveCur;
+    const sortRows = rs => rs.slice().sort((a,b)=> (a.date||'') < (b.date||'') ? -1 : 1).map(recRow);
+    const used = {};
+    const addSheet = (rows, name) => {
+      if(!rows.length) return;
+      let n = safeSheetName(name), k = 2; while(used[n.toLowerCase()]){ n = safeSheetName(name).substring(0,28) + '_' + (k++); }
+      used[n.toLowerCase()] = 1; XLSX.utils.book_append_sheet(wb, sheetFromRows(rows), n);
+    };
+    if(summary.length){ const ws = XLSX.utils.json_to_sheet(summary); ws['!cols'] = Object.keys(summary[0]).map(()=>({wch:18})); used[safeSheetName(t('sheetSummary')).toLowerCase()] = 1; XLSX.utils.book_append_sheet(wb, ws, safeSheetName(t('sheetSummary'))); }
+    addSheet(sortRows(D.records), t('sheetAll'));
+    tabs.forEach(tab => addSheet(sortRows(D.records.filter(r => r.tabName === tab)), nameOf(tab) || tab));
+    // private desk
+    const saveP = privateCurrent; privateCurrent = D.priv;
+    addSheet(pvNoteRows(), t('pvNotesTitle')); addSheet(pvSwapRows(), t('pvSwapTitle')); addSheet(pvBuzanRows(), t('pvBuzanTitle'));
+    privateCurrent = saveP;
+    addSheet(D.employees.map(x => ({ [t('uName')]: x.fullName || '', [t('uUser')]: x.username || '', [t('uRole')]: x.role || '', 'Tab': x.tabName || '' })), t('sheetUsers'));
+    XLSX.writeFile(wb, 'Backup_' + stamp + '.xlsx');
+    const json = JSON.stringify({ app: 'silver-ledger', exportedAt: new Date().toISOString(), employees: D.employees, records: D.records, private: D.priv }, null, 1);
+    setTimeout(() => dlBlob(new Blob([json], { type: 'application/json' }), 'Backup_' + stamp + '.json'), 600);
+    if(!silent) alert(t('backupDone'));
+    return true;
+  }catch(e){ console.error(e); alert(t('backupFailed')); return false; }
+  finally{ if(btn){ btn.disabled = false; btn.textContent = t('backupBtn'); } }
+}
+
+let resetTarget = null;
+async function openReset(){
+  if(!session || session.role !== 'admin') return;
+  document.getElementById('reset-modal').style.display = 'flex';
+  document.getElementById('reset-status').textContent = '';
+  cancelResetConfirm();
+  document.getElementById('reset-list').innerHTML = '<div class="empty">'+t('loading')+'</div>';
+  try{
+    const [e, r] = await Promise.all([db.collection('employees').get(), db.collection('records').get()]);
+    employees = e.docs.map(d => Object.assign({ uid: d.id }, d.data()));
+    const counts = {}; r.docs.forEach(d => { const k = d.data().tabName; counts[k] = (counts[k]||0) + 1; });
+    const tabs = Array.from(new Set(employees.map(x => x.tabName).concat(Object.keys(counts)).filter(Boolean)));
+    document.getElementById('reset-list').innerHTML = tabs.map(tab =>
+      '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(128,128,128,.18);">'+
+      '<div style="flex:1;min-width:0;"><b>'+esc(nameOf(tab) || tab)+'</b><div class="subhead" style="margin:0;">'+(counts[tab]||0)+' '+t('resetRecords')+'</div></div>'+
+      '<button class="ghost" style="width:auto;margin:0;color:#c0392b;" data-tab="'+esc(tab)+'" onclick="askReset(this.dataset.tab)">'+t('resetRow')+'</button></div>').join('') || '<div class="empty">—</div>';
+  }catch(err){ document.getElementById('reset-list').innerHTML = '<div class="empty">'+t('couldNotReach')+'</div>'; }
+}
+function closeReset(){ document.getElementById('reset-modal').style.display = 'none'; cancelResetConfirm(); }
+function askReset(tab){
+  resetTarget = tab;
+  document.getElementById('reset-confirm-msg').textContent = t('resetConfirmMsg') + (nameOf(tab) || tab);
+  document.getElementById('reset-typed').value = '';
+  document.getElementById('reset-confirm').style.display = 'block';
+}
+function cancelResetConfirm(){ resetTarget = null; const c = document.getElementById('reset-confirm'); if(c) c.style.display = 'none'; }
+async function doReset(){
+  if(!session || session.role !== 'admin' || !resetTarget) return;
+  const tab = resetTarget, nm = (nameOf(tab) || tab).trim().toLowerCase();
+  const st = document.getElementById('reset-status');
+  if(document.getElementById('reset-typed').value.trim().toLowerCase() !== nm){ st.textContent = t('resetNameMismatch'); return; }
+  const go = document.getElementById('reset-go'); go.disabled = true;
+  try{
+    if(document.getElementById('reset-backup-first').checked){
+      st.textContent = t('backupWorking');
+      const ok = await runBackup(true);
+      if(!ok){ st.textContent = t('backupFailed'); return; }
+    }
+    let deleted = 0;
+    for(;;){
+      const snap = await db.collection('records').where('tabName','==',tab).limit(400).get();
+      if(snap.empty) break;
+      const b = db.batch(); snap.docs.forEach(d => b.delete(d.ref)); await b.commit(); deleted += snap.size;
+    }
+    st.textContent = t('resetDone') + deleted;
+    cancelResetConfirm(); openReset();
+  }catch(e){ console.error(e); st.textContent = t('resetFailed'); }
+  finally{ go.disabled = false; }
+}
+
 function exportXlsx(){
   const rows = exportRows();
   if(!rows.length) return;
@@ -2411,13 +2568,14 @@ function renderPrivate(){
    Sell to Buzan:  we receive our price against the Buzan rate          -> margin = price - market  */
 function buzanCalc(side, rate, price){
   const market = (rate / TROY_OUNCE_GRAMS) * 1000;
-  return { market, margin: side === 'sell' ? price - market : market - price };
+  if(!price) price = market;               // no negotiated price typed = dealt at the Buzan rate, no margin
+  return { market, price, margin: side === 'sell' ? price - market : market - price };
 }
 function renderPvBuzan(buz){
   const can = session && (session.role === 'admin' || session.role === 'hr');
   let bKg = 0, bTot = 0, sKg = 0, sTot = 0, pl = 0;
   buz.forEach(r => {
-    const kg = Number(r.kg)||0, total = (Number(r.price)||0) * kg, c = buzanCalc(r.side, Number(r.rate)||0, Number(r.price)||0);
+    const kg = Number(r.kg)||0, c = buzanCalc(r.side, Number(r.rate)||0, Number(r.price)||0), total = c.price * kg;
     if(r.side === 'sell'){ sKg += kg; sTot += total; } else { bKg += kg; bTot += total; }
     pl += c.margin * kg;
   });
@@ -2431,7 +2589,7 @@ function renderPvBuzan(buz){
   if(!buz.length){ wrap.innerHTML = '<div class="empty">'+t('pvEmpty')+'</div>'; return; }
   let h = '<table><thead><tr><th>'+t('date')+'</th><th>'+t('colType')+'</th><th>'+t('colKg')+'</th><th>'+t('party')+'</th><th>'+t('colRate')+'</th><th>'+t('colPrice')+'</th><th>'+t('colMarket')+'</th><th>'+t('colMargin')+'</th><th>'+t('colPlKg')+'</th><th>'+t('colTotal')+'</th><th>'+t('notes')+'</th><th>'+t('colEnteredBy')+'</th>'+(can?'<th></th>':'')+'</tr></thead><tbody>';
   buz.forEach(r => {
-    const kg = Number(r.kg)||0, price = Number(r.price)||0, c = buzanCalc(r.side, Number(r.rate)||0, price), sell = r.side === 'sell';
+    const kg = Number(r.kg)||0, c = buzanCalc(r.side, Number(r.rate)||0, Number(r.price)||0), price = c.price, sell = r.side === 'sell';
     h += '<tr><td class="num">'+esc(r.date)+'</td><td><span class="margin-pill '+(sell?'margin-pos':'margin-neg')+'">'+t(sell?'sideSell':'sideBuy')+'</span></td><td class="num">'+kg.toFixed(2)+'</td><td>'+esc(r.party)+'</td>'+
       '<td class="num">'+cleanRate(r.rate)+'</td><td class="num">'+fmtMoney(price)+'</td><td class="num">'+fmtMoney(c.market)+'</td>'+
       '<td class="num"><span class="margin-pill '+(c.margin>=0?'margin-pos':'margin-neg')+'">'+fmtSigned(c.margin)+'</span></td>'+
@@ -2447,7 +2605,7 @@ function updatePvBuzan(){
   document.getElementById('pvb-c-ounce').textContent = (kg / OUNCE_DIVISOR).toFixed(2);
   document.getElementById('pvb-c-market').textContent = fmtMoney(c.market);
   document.getElementById('pvb-c-pl').textContent = fmtSigned(c.margin * kg);
-  document.getElementById('pvb-c-total').textContent = fmtMoney(price * kg);
+  document.getElementById('pvb-c-total').textContent = fmtMoney(c.price * kg);
   const pill = document.querySelector('#pvb-c-margin .margin-pill'); pill.textContent = fmtSigned(c.margin); pill.className = 'margin-pill ' + (c.margin >= 0 ? 'margin-pos' : 'margin-neg');
 }
 function resetPvBuzan(){
@@ -2458,10 +2616,10 @@ function resetPvBuzan(){
 async function submitPvBuzan(){
   const id = document.getElementById('pvb-id').value, date = document.getElementById('pvb-date').value, side = document.getElementById('pvb-side').value;
   const kg = parseFloat(document.getElementById('pvb-kg').value), rate = parseFloat(document.getElementById('pvb-rate').value), price = parseFloat(document.getElementById('pvb-price').value);
-  if(!date || !(kg > 0) || !(rate > 0) || !(price > 0)){ alert(t('pvFillBuzan')); return; }
-  const c = buzanCalc(side, rate, price);
-  const data = { kind:'buzan', date, side, kg, rate, price, party: document.getElementById('pvb-party').value, notes: document.getElementById('pvb-notes').value,
-    ounce: kg / OUNCE_DIVISOR, marketPrice: c.market, margin: c.margin, total: price * kg, enteredBy: session.fullName, timestamp: firebase.firestore.FieldValue.serverTimestamp() };
+  if(!date || !(kg > 0) || !(rate > 0)){ alert(t('pvFillBuzan')); return; }
+  const c = buzanCalc(side, rate, price > 0 ? price : 0);
+  const data = { kind:'buzan', date, side, kg, rate, price: c.price, party: document.getElementById('pvb-party').value, notes: document.getElementById('pvb-notes').value,
+    ounce: kg / OUNCE_DIVISOR, marketPrice: c.market, margin: c.margin, total: c.price * kg, enteredBy: session.fullName, timestamp: firebase.firestore.FieldValue.serverTimestamp() };
   try{
     if(id) await db.collection('private').doc(id).set(data, { merge: true }); else await db.collection('private').add(data);
     resetPvBuzan();
@@ -2573,7 +2731,7 @@ function pvSwapRows(){
 }
 function pvBuzanRows(){
   return privateCurrent.filter(r => r.kind === 'buzan').sort(pvSort).map(r => {
-    const kg = Number(r.kg)||0, price = Number(r.price)||0, c = buzanCalc(r.side, Number(r.rate)||0, price);
+    const kg = Number(r.kg)||0, c = buzanCalc(r.side, Number(r.rate)||0, Number(r.price)||0), price = c.price;
     return { 'Date': r.date, 'Type': t(r.side === 'sell' ? 'sideSell' : 'sideBuy'), 'KG': round2(kg), 'Party': r.party || '', 'Rate': +Number(r.rate).toFixed(3),
       'Price/KG': round2(price), 'Market $/KG': round2(c.market), 'Margin': round2(c.margin), 'P/L x KG': round2(c.margin * kg), 'Total': round2(price * kg),
       'Entered by': r.enteredBy || '', 'Notes': r.notes || '' };
