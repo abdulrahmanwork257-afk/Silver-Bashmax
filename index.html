@@ -467,8 +467,13 @@
     <div class="panel glass" id="entry-panel" style="display:none;">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
         <h3 id="form-title" data-i18n="addTransaction" style="margin:0;">Add transaction</h3>
-        <button class="ghost" onclick="openAddKg()" data-i18n="addKgAllowance">+ Add KG allowance</button>
+        <button class="ghost" id="kg-allow-btn" onclick="openAddKg()" data-i18n="addKgAllowance">+ Add KG allowance</button>
       </div>
+      <div class="range-row mode-row" id="entry-mode" style="display:none;margin-bottom:14px;">
+        <button class="chip active" data-mode="ledger" onclick="setEntryMode('ledger')" data-i18n="ledgerMode">Ledger transaction</button>
+        <button class="chip" data-mode="mt5" onclick="setEntryMode('mt5')" data-i18n="mt5Mode">MT5 trade</button>
+      </div>
+      <div id="ledger-form">
       <input type="hidden" id="edit-id">
       <div class="form-grid">
         <div><label data-i18n="date">Date</label><input type="date" id="f-date"></div>
@@ -493,6 +498,25 @@
       </div>
       <button onclick="submitRecord()" data-i18n="saveTransaction">Save transaction</button>
       <button class="secondary" id="cancel-edit" style="display:none;margin-inline-start:8px;" onclick="resetForm()" data-i18n="cancelEdit">Cancel edit</button>
+      </div>
+      <div id="mt5-form" style="display:none;">
+        <input type="hidden" id="mt5-id">
+        <div class="form-grid">
+          <div><label data-i18n="date">Date</label><input type="date" id="mt5-date"></div>
+          <div><label data-i18n="mt5Lots">Lots</label><input type="number" step="any" id="mt5-lots" oninput="updateMt5()"></div>
+          <div><label data-i18n="mt5Sell">Sell price (per oz)</label><input type="number" step="any" id="mt5-sell" oninput="updateMt5()"></div>
+          <div><label data-i18n="mt5Buy">Buy price (per oz)</label><input type="number" step="any" id="mt5-buy" oninput="updateMt5()"></div>
+          <div class="full"><label data-i18n="notes">Notes</label><input type="text" id="mt5-notes"></div>
+        </div>
+        <div class="hint" data-i18n="mt5Hint">XAGUSD: 1 lot = 5,000 oz.</div>
+        <div class="computed-row">
+          <div data-i18n="mt5Ounces">Ounces<span class="num" id="m-oz">0.00</span></div>
+          <div data-i18n="mt5Diff">Difference / oz<span class="num" id="m-diff">$0.000</span></div>
+          <div data-i18n="mt5Profit">Profit / loss<span class="num" id="m-profit"><span class="margin-pill">$0.00</span></span></div>
+        </div>
+        <button onclick="submitMt5()" data-i18n="mt5Save">Save MT5 trade</button>
+        <button class="secondary" id="mt5-cancel" style="display:none;margin-inline-start:8px;" onclick="resetMt5()" data-i18n="cancelEdit">Cancel edit</button>
+      </div>
     </div>
 
     <div class="panel glass" id="tx-panel">
@@ -794,12 +818,12 @@
    Firebase Console → Project settings → General → Your apps → SDK setup.
    ==================================================================== */
 const firebaseConfig = {
-  apiKey: "AIzaSyC5yab_KHtWM6awr7kuapSlz7SIeBjERlE",
-  authDomain: "suly-buzan-ledger.firebaseapp.com",
-  projectId: "suly-buzan-ledger",
-  storageBucket: "suly-buzan-ledger.firebasestorage.app",
-  messagingSenderId: "477670457012",
-  appId: "1:477670457012:web:3561167783fc27d4eee1e1"
+  apiKey: "AIzaSyC5yab_KHtWM6awr7kuapSlz7SIeBjERlE",
+  authDomain: "suly-buzan-ledger.firebaseapp.com",
+  projectId: "suly-buzan-ledger",
+  storageBucket: "suly-buzan-ledger.firebasestorage.app",
+  messagingSenderId: "477670457012",
+  appId: "1:477670457012:web:3561167783fc27d4eee1e1"
 };
 const AUTH_EMAIL_DOMAIN = 'ledger.local'; // usernames become username@ledger.local internally — not a real mailbox
 
@@ -824,8 +848,13 @@ function marginFor(type, price, market){
   const d = (Number(price)||0) - (Number(market)||0);
   return type === WAY2 ? -d : d;
 }
+const MT5 = 'MT5 Trade', MT5_OZ_PER_LOT = 5000;   // XAGUSD: 1 lot = 5,000 oz (checked on the two sample trades: 0.16 lot x 0.045 = 36.00, 0.64 lot x 0.117 = 374.40)
+function isMt5(r){ return r.type === MT5; }
+function mt5Oz(r){ return (Number(r.lots)||0) * MT5_OZ_PER_LOT; }
+function mt5Profit(r){ return round2(((Number(r.sellPrice)||0) - (Number(r.buyPrice)||0)) * mt5Oz(r)); }
+function isHrTab(tab){ return employees.some(e => e.tabName === tab && e.role === 'hr'); }
 function effMargin(r){
-  if(r.type === GRANT_SULY || r.type === GRANT_BUZAN) return 0;
+  if(r.type === GRANT_SULY || r.type === GRANT_BUZAN || r.type === MT5) return 0;
   return marginFor(r.type, r.negotiatedPrice, r.marketPrice);
 }
 function nameOf(tab){
@@ -887,6 +916,10 @@ const I18N = {
     sumEmployee: 'Employee', sumRecords: 'Records', sumSulyBought: 'Suly bought KG', sumSulySold: 'Suly sold KG', sumBuzanBought: 'Buzan bought KG', sumBuzanSold: 'Buzan sold KG',
     sumTotalBuy: 'Total buy', sumTotalSell: 'Total sell', sumWay1: 'Net Sell Suly / Buy Buzan', sumWay2: 'Net Buy Suly / Sell Buzan', sumBalance: 'Suly balance KG', sumNet: 'Net profit per KG', sumClosed: 'Closed profit', sumOpen: 'Open profit',
     uName: 'Name', uUser: 'Username', uRole: 'Role',
+    mt5Mode: 'MT5 trade', ledgerMode: 'Ledger transaction', mt5Title: 'Add MT5 trade', mt5Edit: 'Edit MT5 trade',
+    mt5Lots: 'Lots', mt5Sell: 'Sell price (per oz)', mt5Buy: 'Buy price (per oz)', mt5Ounces: 'Ounces', mt5Diff: 'Difference / oz', mt5Profit: 'Profit / loss',
+    mt5Save: 'Save MT5 trade', mt5Section: 'MT5 trades', mt5Tile: 'MT5 trading profit', mt5Count: 'MT5 trades', mt5Total: 'Total result incl. MT5',
+    mt5Hint: 'XAGUSD: 1 lot = 5,000 oz. Profit = (sell price − buy price) × ounces.', mt5Type: 'MT5 trade', mt5Lot: 'lots',
     themeLight: 'Light', themeDark: 'Dark', themeRed: 'Dark red',
     manageUsers: 'Manage users', usersHint: "Change a person's display name or role. Their records stay linked to the account, so renaming is safe. A role change applies the next time that person signs in.",
     roleAdmin: 'Admin', close: 'Close', savedOk: 'Saved', nameRequired: 'Enter a name.',
@@ -964,6 +997,10 @@ const I18N = {
     sumEmployee: 'فەرمانبەر', sumRecords: 'تۆمار', sumSulyBought: 'کیلۆی کڕاو (سلێمانی)', sumSulySold: 'کیلۆی فرۆشراو (سلێمانی)', sumBuzanBought: 'کیلۆی کڕاو (بوزان)', sumBuzanSold: 'کیلۆی فرۆشراو (بوزان)',
     sumTotalBuy: 'کۆی کڕین', sumTotalSell: 'کۆی فرۆشتن', sumWay1: 'خێر: فرۆشتن سلێمانی / کڕین بوزان', sumWay2: 'خێر: کڕین سلێمانی / فرۆشتن بوزان', sumBalance: 'کیلۆی ماوە (سلێمانی)', sumNet: 'قازانجی سافی بۆ هەر کیلۆیەک', sumClosed: 'قازانجی داخراو', sumOpen: 'قازانجی کراوە',
     uName: 'ناو', uUser: 'ناوی بەکارهێنەر', uRole: 'ڕۆڵ',
+    mt5Mode: 'مامەڵەی MT5', ledgerMode: 'مامەڵەی دەفتەر', mt5Title: 'زیادکردنی مامەڵەی MT5', mt5Edit: 'دەستکاریکردنی مامەڵەی MT5',
+    mt5Lots: 'لۆت', mt5Sell: 'نرخی فرۆشتن (بۆ هەر ئۆنسێک)', mt5Buy: 'نرخی کڕین (بۆ هەر ئۆنسێک)', mt5Ounces: 'ئۆنس', mt5Diff: 'جیاوازی بۆ هەر ئۆنسێک', mt5Profit: 'قازانج / زیان',
+    mt5Save: 'پاشەکەوتکردنی مامەڵەی MT5', mt5Section: 'مامەڵەکانی MT5', mt5Tile: 'قازانجی بازرگانی MT5', mt5Count: 'ژمارەی مامەڵەی MT5', mt5Total: 'ئەنجامی گشتی لەگەڵ MT5',
+    mt5Hint: 'XAGUSD: هەر لۆتێک = 5,000 ئۆنس. قازانج = (نرخی فرۆشتن − نرخی کڕین) × ئۆنس.', mt5Type: 'مامەڵەی MT5', mt5Lot: 'لۆت',
     themeLight: 'ڕووناک', themeDark: 'تاریک', themeRed: 'سووری تۆخ',
     manageUsers: 'بەڕێوەبردنی بەکارهێنەران', usersHint: 'ناوی پیشاندراو یان ڕۆڵی کەسێک بگۆڕە. تۆمارەکانیان بە هەژمارەکەیانەوە بەستراون، بۆیە گۆڕینی ناو بێ مەترسییە. گۆڕینی ڕۆڵ لە جاری داهاتووی چوونەژوورەوەی ئەو کەسەدا کار دەکات.',
     roleAdmin: 'بەڕێوەبەر', close: 'داخستن', savedOk: 'پاشەکەوت کرا', nameRequired: 'ناوێک بنووسە.',
@@ -1195,6 +1232,7 @@ async function enterApp(){
   document.getElementById('viewing-title').textContent = viewTitle();
   document.getElementById('viewing-sub').textContent = subText();
   await buildSidebar();
+  refreshEntryPanel();
   document.getElementById('viewing-title').textContent = viewTitle();
   document.getElementById('f-date').value = ymd(new Date());
   setRange('today');
@@ -1255,8 +1293,7 @@ function switchTab(tabName, btnEl){
   if(btnEl) btnEl.classList.add('active');
   const select = document.getElementById('tab-select');
   if(select.value !== tabName) select.value = tabName;
-  const canEdit = (tabName !== 'ALL' && tabName !== 'PRIVATE') && session.role === 'admin';
-  document.getElementById('entry-panel').style.display = canEdit ? 'block' : 'none';
+  refreshEntryPanel();
   document.getElementById('viewing-title').textContent = viewTitle();
   document.getElementById('viewing-sub').textContent = subText();
   loadData();
@@ -1269,7 +1306,7 @@ let prevRange = 'today';
 function setRange(mode){
   if(mode === 'dates' && !pickedDates.size){ mode = (currentRange === 'dates') ? 'today' : currentRange; }
   currentRange = mode;
-  document.querySelectorAll('.range-row .chip').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.range-row:not(.mode-row) .chip').forEach(b=>b.classList.remove('active'));
   const now = new Date();
   let from = null, to = null;
   if(mode === 'today'){ from = to = ymd(now); }
@@ -1408,11 +1445,13 @@ function computeTotals(){
   const suly = { boughtKg:0, boughtTotal:0, soldKg:0, soldTotal:0, grantedKg:0 };
   const buzan = { boughtKg:0, boughtTotal:0, soldKg:0, soldTotal:0, grantedKg:0 };
   let totalMargin = 0, tradeCount = 0;
+  const mt5 = { profit:0, count:0, lots:0, ounces:0 };
   const tradeRecords = []; // excludes grants — grants carry no money and shouldn't skew margin/price averages
   currentRecords.forEach(r=>{
     const kg = Number(r.kg)||0;
     if(r.type === GRANT_SULY){ suly.grantedKg += kg; return; }
     if(r.type === GRANT_BUZAN){ buzan.grantedKg += kg; return; }
+    if(r.type === MT5){ mt5.profit += mt5Profit(r); mt5.count += 1; mt5.lots += Number(r.lots)||0; mt5.ounces += mt5Oz(r); return; }
     const total = Number(r.total)||0, buzanValue = (Number(r.marketPrice)||0)*kg;
     if(r.type === WAY1){ suly.soldKg += kg; suly.soldTotal += total; buzan.boughtKg += kg; buzan.boughtTotal += buzanValue; }
     else if(r.type === WAY2){ suly.boughtKg += kg; suly.boughtTotal += total; buzan.soldKg += kg; buzan.soldTotal += buzanValue; }
@@ -1427,7 +1466,7 @@ function computeTotals(){
   const sulyBalanceKg = suly.boughtKg + suly.grantedKg - suly.soldKg;
   const buzanBalanceKg = buzan.boughtKg + buzan.grantedKg - buzan.soldKg;
   return {
-    suly, buzan, totalBuy, totalSell, income,
+    suly, buzan, totalBuy, totalSell, income, mt5, totalWithMt5: income + mt5.profit,
     sulyBalanceKg, buzanBalanceKg,
     incomePerKg: totalKg ? income/totalKg : 0, avgMargin: tradeCount ? totalMargin/tradeCount : 0,
     weightedAvgPrice: totalKg ? kgPriceSum/totalKg : 0,
@@ -1490,6 +1529,10 @@ function renderBalance(){
       '<div>'+t('netProfit')+'<span class="num"><span class="margin-pill '+(r.netProfit>=0?'margin-pos':'margin-neg')+'">'+fmtSigned(r.netProfit)+'</span></span></div>'+
       '<div>'+t('netProfitClosed')+'<small class="kgnote">'+r.split.matchedKg.toFixed(2)+' kg</small><span class="num"><span class="margin-pill '+(r.split.closed>=0?'margin-pos':'margin-neg')+'">'+fmtSigned(r.split.closed)+'</span></span></div>'+
       '<div>'+t('netProfitOpen')+'<small class="kgnote">'+r.split.openKg.toFixed(2)+' kg '+t(r.split.openSide==='toBuy'?'toBuy':'toSell')+'</small><span class="num"><span class="margin-pill '+(r.split.open>=0?'margin-pos':'margin-neg')+'">'+fmtSigned(r.split.open)+'</span></span></div>'+
+      ((r.mt5.count || isHrTab(viewingTab)) ?
+        '<div>'+t('mt5Tile')+'<span class="num"><span class="margin-pill '+(r.mt5.profit>=0?'margin-pos':'margin-neg')+'">'+fmtSigned(r.mt5.profit)+'</span></span></div>'+
+        '<div>'+t('mt5Count')+'<small class="kgnote">'+r.mt5.lots.toFixed(2)+' '+t('mt5Lot')+' · '+r.mt5.ounces.toFixed(0)+' oz</small><span class="num">'+r.mt5.count+'</span></div>'+
+        '<div>'+t('mt5Total')+'<small class="kgnote">'+t('income')+' + MT5</small><span class="num"><span class="margin-pill '+(r.totalWithMt5>=0?'margin-pos':'margin-neg')+'">'+fmtSigned(r.totalWithMt5)+'</span></span></div>' : '')+
       '<div>'+t('txnCount')+'<span class="num">'+r.recordCount+'</span></div>'+
     '</div>';
 }
@@ -1505,7 +1548,7 @@ function renderTable(){
   const canEdit = session.role === 'admin' && viewingTab !== 'ALL';
   const showEmployee = viewingTab === 'ALL';
   const byDate = {};
-  currentRecords.forEach(r=>{ const d = r.date; if(!byDate[d]) byDate[d]=[]; byDate[d].push(r); });
+  currentRecords.filter(r => !isMt5(r)).forEach(r=>{ const d = r.date; if(!byDate[d]) byDate[d]=[]; byDate[d].push(r); });
   const dates = Object.keys(byDate).sort().reverse();
 
   let html = '';
@@ -1553,7 +1596,94 @@ function renderTable(){
     });
     html += '</tbody></table>';
   });
-  wrap.innerHTML = html;
+  wrap.innerHTML = html + mt5TableHtml();
+}
+function mt5TableHtml(){
+  const rows = currentRecords.filter(isMt5).sort((a,b)=> a.date === b.date ? tsMillis(b) - tsMillis(a) : (a.date < b.date ? 1 : -1));
+  if(!rows.length) return '';
+  const showEmp = viewingTab === 'ALL', canEdit = mt5CanEnter();
+  let tot = 0, lots = 0; rows.forEach(r => { tot += mt5Profit(r); lots += Number(r.lots)||0; });
+  let h = '<h3 style="margin:24px 0 8px;font-size:15px;">'+t('mt5Section')+'<span style="color:var(--muted);font-weight:400;font-size:13px;"> · '+rows.length+' · '+lots.toFixed(2)+' '+t('mt5Lot')+' · </span><span class="margin-pill '+(tot>=0?'margin-pos':'margin-neg')+'">'+fmtSigned(tot)+'</span></h3>'+
+    '<table><thead><tr><th>'+t('date')+'</th>'+(showEmp?'<th>'+t('colEmployee')+'</th>':'')+'<th>'+t('mt5Lots')+'</th><th>'+t('mt5Ounces')+'</th><th>'+t('mt5Sell')+'</th><th>'+t('mt5Buy')+'</th><th>'+t('mt5Diff')+'</th><th>'+t('mt5Profit')+'</th><th>'+t('notes')+'</th><th>'+t('colEnteredBy')+'</th>'+(canEdit?'<th></th>':'')+'</tr></thead><tbody>';
+  rows.forEach(r => {
+    const pr = mt5Profit(r), diff = (Number(r.sellPrice)||0) - (Number(r.buyPrice)||0);
+    h += '<tr><td class="num">'+esc(r.date)+'</td>'+(showEmp?'<td>'+esc(nameOf(r.tabName))+'</td>':'')+
+      '<td class="num">'+(Number(r.lots)||0).toFixed(2)+'</td><td class="num">'+mt5Oz(r).toFixed(0)+'</td>'+
+      '<td class="num">$'+(Number(r.sellPrice)||0).toFixed(3)+'</td><td class="num">$'+(Number(r.buyPrice)||0).toFixed(3)+'</td>'+
+      '<td class="num">'+(diff>=0?'+':'-')+Math.abs(diff).toFixed(3)+'</td>'+
+      '<td class="num"><span class="margin-pill '+(pr>=0?'margin-pos':'margin-neg')+'">'+fmtSigned(pr)+'</span></td>'+
+      '<td>'+esc(r.notes)+'</td><td>'+esc(r.enteredBy)+'</td>'+
+      (canEdit ? '<td class="row-actions"><button class="secondary" data-edit-id="'+r.id+'">'+t('edit')+'</button><button class="danger" data-delete-id="'+r.id+'">'+t('delete')+'</button></td>' : '')+'</tr>';
+  });
+  return h + '</tbody></table>';
+}
+
+/* ====== MT5 TRADES (HR accounts) ====== */
+let entryMode = 'ledger';
+function mt5CanEnter(){
+  if(!session) return false;
+  if(session.role === 'hr') return viewingTab === session.tabName;
+  return session.role === 'admin' && viewingTab !== 'ALL' && viewingTab !== 'PRIVATE' && isHrTab(viewingTab);
+}
+function refreshEntryPanel(){
+  const panel = document.getElementById('entry-panel');
+  const admin = !!session && session.role === 'admin' && viewingTab !== 'ALL' && viewingTab !== 'PRIVATE';
+  const mt5 = mt5CanEnter();
+  panel.style.display = (admin || mt5) ? 'block' : 'none';
+  if(!admin && !mt5) return;
+  document.getElementById('entry-mode').style.display = (admin && mt5) ? 'flex' : 'none';
+  if(!mt5) entryMode = 'ledger'; else if(!admin) entryMode = 'mt5';
+  setEntryMode(entryMode);
+}
+function setEntryMode(m){
+  entryMode = m;
+  document.getElementById('ledger-form').style.display = m === 'ledger' ? '' : 'none';
+  document.getElementById('mt5-form').style.display = m === 'mt5' ? '' : 'none';
+  document.getElementById('kg-allow-btn').style.display = m === 'ledger' ? '' : 'none';
+  document.querySelectorAll('#entry-mode .chip').forEach(b => b.classList.toggle('active', b.getAttribute('data-mode') === m));
+  const title = document.getElementById('form-title');
+  const key = m === 'mt5' ? (document.getElementById('mt5-id').value ? 'mt5Edit' : 'mt5Title') : 'addTransaction';
+  title.setAttribute('data-i18n', key); title.textContent = t(key);
+  if(m === 'mt5'){ if(!document.getElementById('mt5-date').value) document.getElementById('mt5-date').value = ymd(new Date()); updateMt5(); }
+}
+function updateMt5(){
+  const r = { lots: parseFloat(document.getElementById('mt5-lots').value) || 0, sellPrice: parseFloat(document.getElementById('mt5-sell').value) || 0, buyPrice: parseFloat(document.getElementById('mt5-buy').value) || 0 };
+  const profit = mt5Profit(r), diff = r.sellPrice - r.buyPrice;
+  document.getElementById('m-oz').textContent = mt5Oz(r).toFixed(2);
+  document.getElementById('m-diff').textContent = (diff >= 0 ? '+' : '-') + '$' + Math.abs(diff).toFixed(3);
+  const pill = document.querySelector('#m-profit .margin-pill');
+  pill.textContent = fmtSigned(profit); pill.className = 'margin-pill ' + (profit >= 0 ? 'margin-pos' : 'margin-neg');
+  return profit;
+}
+async function submitMt5(){
+  if(!mt5CanEnter()) return;
+  const id = document.getElementById('mt5-id').value, date = document.getElementById('mt5-date').value;
+  const lots = parseFloat(document.getElementById('mt5-lots').value), sellPrice = parseFloat(document.getElementById('mt5-sell').value), buyPrice = parseFloat(document.getElementById('mt5-buy').value);
+  if(!date || !lots || !sellPrice || !buyPrice){ alert(t('fillRequired')); return; }
+  const base = { lots, sellPrice, buyPrice };
+  const data = { tabName: viewingTab, date, type: MT5, lots, sellPrice, buyPrice, ounces: mt5Oz(base), profit: mt5Profit(base), kg: 0, total: 0,
+    notes: document.getElementById('mt5-notes').value, enteredBy: session.fullName, timestamp: firebase.firestore.FieldValue.serverTimestamp() };
+  try{
+    if(id) await db.collection('records').doc(id).set(data, { merge: true });
+    else await db.collection('records').add(data);
+    resetMt5();
+  }catch(e){ alert(t('couldNotSave') + ' (' + e.message + ')'); }
+}
+function editMt5(r){
+  if(!mt5CanEnter()) return;
+  document.getElementById('mt5-id').value = r.id;
+  document.getElementById('mt5-date').value = r.date;
+  document.getElementById('mt5-lots').value = r.lots; document.getElementById('mt5-sell').value = r.sellPrice; document.getElementById('mt5-buy').value = r.buyPrice;
+  document.getElementById('mt5-notes').value = r.notes || '';
+  document.getElementById('mt5-cancel').style.display = 'inline-block';
+  setEntryMode('mt5');
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+function resetMt5(){
+  ['mt5-id','mt5-lots','mt5-sell','mt5-buy','mt5-notes'].forEach(i => document.getElementById(i).value = '');
+  document.getElementById('mt5-date').value = ymd(new Date());
+  document.getElementById('mt5-cancel').style.display = 'none';
+  setEntryMode('mt5');
 }
 
 /* ====== FORM ====== */
@@ -1600,6 +1730,7 @@ async function submitRecord(){
 function editRecord(id){
   const r = currentRecords.find(x => x.id === id);
   if(!r) return;
+  if(isMt5(r)){ editMt5(r); return; }
   if(r.type === GRANT_SULY || r.type === GRANT_BUZAN){ editKgGrant(r); return; }
   document.getElementById('edit-id').value = r.id;
   document.getElementById('f-date').value = r.date;
@@ -2034,7 +2165,7 @@ function chartData(){
   const buckets = {};
   const get = k => buckets[k] || (buckets[k] = { sold:0, bought:0, soldMoney:0, boughtMoney:0, count:0 });
   win.records.forEach(r => {
-    if(r.type === GRANT_SULY || r.type === GRANT_BUZAN) return;
+    if(r.type === GRANT_SULY || r.type === GRANT_BUZAN || r.type === MT5) return;
     const b = get(bucketKey(r.date, g)), kg = Number(r.kg)||0, total = Number(r.total)||0, market = (Number(r.marketPrice)||0) * kg;
     if(r.type === WAY1){ b.sold += kg; b.soldMoney += total; b.boughtMoney += market; }
     else if(r.type === WAY2){ b.bought += kg; b.boughtMoney += total; b.soldMoney += market; }
@@ -2156,9 +2287,20 @@ function exportLabel(key){ const d = EXPORT_COLS.find(c => c[0] === key); return
 function esc(x){ return String(x == null ? '' : x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function num2(v){ return Number(v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); }
 
+function mt5ExportRow(r, showEmp){
+  const row = {};
+  if(showEmp) row['Employee'] = nameOf(r.tabName) || '';
+  row['Date'] = r.date; row['Type'] = t('mt5Type'); row['KG'] = ''; row['Customer'] = ''; row['Rate'] = '';
+  row['Price/KG'] = ''; row['Ounce'] = round2(mt5Oz(r)); row['Market $/KG'] = ''; row['Margin'] = '';
+  row['P/L x KG'] = mt5Profit(r); row['Total'] = '';
+  row['Entered by'] = r.enteredBy || '';
+  row['Notes'] = (Number(r.lots)||0) + ' ' + t('mt5Lot') + ' · ' + t('mt5Sell').split(' (')[0] + ' ' + (Number(r.sellPrice)||0).toFixed(3) + ' → ' + t('mt5Buy').split(' (')[0] + ' ' + (Number(r.buyPrice)||0).toFixed(3) + (r.notes ? ' · ' + r.notes : '');
+  return row;
+}
 function exportRows(){
   const showEmp = viewingTab === 'ALL';
   return currentRecords.slice().sort((a,b)=> a.date < b.date ? 1 : -1).map(r => {
+    if(isMt5(r)) return mt5ExportRow(r, showEmp);
     const isGrant = r.type === GRANT_SULY || r.type === GRANT_BUZAN;
     const typeLabel = r.type === WAY1 ? t('way1') : r.type === WAY2 ? t('way2') : r.type === GRANT_SULY ? '+'+t('grantSuly') : '+'+t('grantBuzan');
     const row = {};
@@ -2205,6 +2347,7 @@ function dlBlob(blob, name){
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href), 4000);
 }
 function recRow(r){
+  if(isMt5(r)){ const o = mt5ExportRow(r, true); o['Employee'] = nameOf(r.tabName) || r.tabName || ''; return o; }
   const isGrant = r.type === GRANT_SULY || r.type === GRANT_BUZAN;
   const typeLabel = r.type === WAY1 ? t('way1') : r.type === WAY2 ? t('way2') : r.type === GRANT_SULY ? '+'+t('grantSuly') : '+'+t('grantBuzan');
   return {
@@ -2241,7 +2384,7 @@ async function runBackup(silent){
         [t('sumBuzanBought')]: round2(T.buzan.boughtKg), [t('sumBuzanSold')]: round2(T.buzan.soldKg),
         [t('sumTotalBuy')]: round2(T.totalBuy), [t('sumTotalSell')]: round2(T.totalSell),
         [t('sumWay1')]: round2(T.way1Net), [t('sumWay2')]: round2(T.way2Net), [t('sumBalance')]: round2(T.sulyBalanceKg),
-        [t('sumNet')]: round2(T.netProfit), [t('sumClosed')]: round2(T.split.closed), [t('sumOpen')]: round2(T.split.open) });
+        [t('sumNet')]: round2(T.netProfit), [t('sumClosed')]: round2(T.split.closed), [t('sumOpen')]: round2(T.split.open), [t('mt5Tile')]: round2(T.mt5.profit), [t('mt5Total')]: round2(T.totalWithMt5) });
     });
     currentRecords = saveCur;
     const sortRows = rs => rs.slice().sort((a,b)=> (a.date||'') < (b.date||'') ? -1 : 1).map(recRow);
